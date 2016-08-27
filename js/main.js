@@ -12,10 +12,16 @@ var Chart = (function(window, d3, self) {
   var yDewPoint = null;
   var yEquilibriumMoistureContent = null;
 
-  init(tags);
+  var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
+
+  initData(tags);
+  //initialize chart
+  initChart();
+  //render the chart
+  render("init");
 
   //called once the data is loaded
-  function init(json) {
+  function initData(json) {
     data = json;
 
     var tagLogsArray = data.map(function (tag) {
@@ -45,7 +51,8 @@ var Chart = (function(window, d3, self) {
     });
 
     //initialize scales
-    var xExtent = d3.extent(tagLogsArray, function(d,i) { return new Date(d.readingAt) });
+    var xExtent = d3.extent(tagLogsArray, function(d,i) { return timeFormat.parse(d.readingAt) });
+    // var xExtent = d3.extent(tagLogsArray, function(d,i) { return new Date(d.readingAt) });
     x = d3.time.scale().domain(xExtent);
 
     var yTemperatureExtent = d3.extent(tagLogsArray, function(d,i) { return d.temperature });
@@ -57,7 +64,9 @@ var Chart = (function(window, d3, self) {
     yRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
     yDewPoint = d3.scale.linear().domain(yDewPointExtent);
     yEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
+  }
 
+  function initChart(){
     //initialize axis
     xAxis = d3.svg.axis().orient('bottom');
     yAxis = d3.svg.axis().orient('left');
@@ -67,7 +76,7 @@ var Chart = (function(window, d3, self) {
 
     //the path generator for the line chart
     line = d3.svg.line()
-      .x(function(d) { return x(new Date(d.date)) })
+      .x(function(d) { return x(timeFormat.parse(d.date)) })
       .y(function(d) { return y(d.y) });
 
     //initialize svg with temperature readings
@@ -81,12 +90,9 @@ var Chart = (function(window, d3, self) {
 
     chartWrapper.append('g').classed('x axis', true);
     chartWrapper.append('g').classed('y axis', true);
-
-    //render the chart
-    render("init");
   }
 
-  function render(event = null) {
+  function render(event) {
     //get dimensions based on window size
     var newWidth = $('#chart').width();
     updateDimensions(newWidth);
@@ -148,28 +154,27 @@ var Chart = (function(window, d3, self) {
       tagPaths.data(tagTemperatureReadings);
       // update yScale
       y = yTemperature;
-      render();
     } else if (dataType === "relativeHumidity"){
       // update tagPaths
       tagPaths.data(tagRelativeHumidityReadings);
       // update yScale
       y = yRelativeHumidity;
-      render();
     } else if (dataType === "dewPoint") {
       // update tagPaths
       tagPaths.data(tagDewPointReadings);
       // update yScale
       y = yDewPoint;
-      render();
     } else if (dataType === "equilibriumMoistureContent") {
       // update tagPaths
       tagPaths.data(tagEquilibriumMoistureContentReadings);
       // update yScale
       y = yEquilibriumMoistureContent;
-      render();
     } else {
       console.log(dataType + " not recognised.");
+      return;
     }
+    render();
+    tagPaths.exit().remove();
   }
 
   function renderFrom(date) {
