@@ -103,7 +103,7 @@ var Chart = (function(window, d3, self) {
     chart.append('g').classed('x axis', true);
     chart.append('g').classed('y axis', true);
 
-    tagPaths = chart.selectAll(".tag")
+    tagPaths = area.selectAll(".tag")
         .data(tagTemperatureReadings)
         .enter().append("g")
         .attr("class", "tag")
