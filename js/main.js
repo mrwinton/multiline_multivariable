@@ -2,7 +2,7 @@ var Chart = (function(window, d3, self) {
   var svg, data, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
   var breakPoint = 320;
 
-  var navWidth, navHeight, navChart, navX, navY, navXAxis, navLine, navSvg, navChart, navTagPaths;
+  var navWidth, navHeight, navChart, navX, navY, navXAxis, navLine, navSvg, navChart, navTagPaths, navViewport;
 
   var tagTemperatureReadings = [];
   var tagRelativeHumidityReadings = [];
@@ -13,6 +13,8 @@ var Chart = (function(window, d3, self) {
   var navYTemperature, navYRelativeHumidity, navYDewPoint, navYEquilibriumMoistureContent;
 
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
+
+  var viewport;
 
   initData(tags);
   //initialize chart
@@ -113,10 +115,20 @@ var Chart = (function(window, d3, self) {
     navChart.append('g').classed('x axis', true);
 
     navTagPaths = navChart.selectAll(".tag")
-        .data(tagTemperatureReadings)
-        .enter().append("g")
-        .attr("class", "tag")
-        .append("path");
+      .data(tagTemperatureReadings)
+      .enter().append("g")
+      .attr("class", "tag")
+      .append("path");
+
+    viewport = d3.svg.brush()
+      .x(navX)
+      .on("brush", function () {
+          x.domain(viewport.empty() ? navX.domain() : viewport.extent());
+          render();
+      });
+
+    navViewport = navChart.append("g")
+      .attr("class", "viewport");
   }
 
   function render(event) {
@@ -139,6 +151,7 @@ var Chart = (function(window, d3, self) {
     navSvg.attr('width', navWidth + margin.left + margin.right)
       .attr('height', navHeight + margin.top + margin.bottom);
     navChart.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+    navViewport.call(viewport).selectAll("rect").attr("height", navHeight);
 
     xAxis.ticks(5);
     navXAxis.ticks(5);

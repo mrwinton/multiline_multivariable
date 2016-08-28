@@ -37,6 +37,8 @@
        stroke-width: 1px;
    }
 
-   .x.axis-nav path {
-     display: none;
+   .navigator .viewport {
+       stroke: grey;
+       fill: black;
+       fill-opacity: 0.2;
    }
