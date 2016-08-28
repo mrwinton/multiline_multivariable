@@ -5,20 +5,33 @@
    ========================================================================== */
 
    body {
-     font: 12px sans-serif;
+     font: 10px Calibri, "Gill Sans", "Gill Sans MT", Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;;
      margin: 0;
+   }
+
+   text{
+     fill: #7d7d7d;
    }
 
    .axis path,
    .axis line {
      fill: none;
-     stroke: #000;
+     stroke: #7d7d7d;
      shape-rendering: crispEdges;
    }
 
    .x.axis path {
      display: none;
    }
+
+   .y.axis path {
+     display: none;
+   }
+
+   .y.axis line {
+    	stroke-dasharray: 5, 5;
+      opacity: 0.15;
+    }
 
    .line {
      fill: none;

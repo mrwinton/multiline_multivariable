@@ -16,6 +16,8 @@ var Chart = (function(window, d3, self) {
 
   var viewport;
 
+  var selectedType = "temperature"
+
   initData(tags);
   //initialize chart
   initChart();
@@ -172,7 +174,7 @@ var Chart = (function(window, d3, self) {
 
     //update the axis and line
     xAxis.scale(x);
-    yAxis.scale(y).orient(newWidth < breakPoint ? 'right' : 'left');
+    yAxis.scale(y).orient(newWidth < breakPoint ? 'right' : 'left').innerTickSize(-width).outerTickSize(0);
     navXAxis.scale(navX);
 
     xAxisElement.attr('transform', 'translate(0,' + height + ')')
@@ -208,6 +210,7 @@ var Chart = (function(window, d3, self) {
       // update yScale
       y = yTemperature;
       navY = navYTemperature;
+      selectedType = "temperature"
     } else if (dataType === "relativeHumidity"){
       // update tagPaths
       tagPaths.data(tagRelativeHumidityReadings);
@@ -215,6 +218,7 @@ var Chart = (function(window, d3, self) {
       // update yScale
       y = yRelativeHumidity;
       navY = navYRelativeHumidity;
+      selectedType = "relativeHumidity"
     } else if (dataType === "dewPoint") {
       // update tagPaths
       tagPaths.data(tagDewPointReadings);
@@ -222,6 +226,7 @@ var Chart = (function(window, d3, self) {
       // update yScale
       y = yDewPoint;
       navY = navYDewPoint;
+      selectedType = "dewPoint"
     } else if (dataType === "equilibriumMoistureContent") {
       // update tagPaths
       tagPaths.data(tagEquilibriumMoistureContentReadings);
@@ -229,6 +234,7 @@ var Chart = (function(window, d3, self) {
       // update yScale
       y = yEquilibriumMoistureContent;
       navY = navYEquilibriumMoistureContent;
+      selectedType = "equilibriumMoistureContent"
     } else {
       console.log(dataType + " not recognised.");
       return;
