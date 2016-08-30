@@ -30,7 +30,7 @@
 
    .y.axis line {
     	stroke-dasharray: 5, 5;
-      opacity: 0.15;
+      opacity: 0.2;
     }
 
    .line {

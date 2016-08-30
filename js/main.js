@@ -1,3 +1,18 @@
+var CHART_TYPE = {
+  TEMPERATURE: {
+    suffix: "°C"
+  },
+  RELATIVE_HUMIDITY: {
+    suffix: "%"
+  },
+  DEW_POINT: {
+    suffix: "°C"
+  },
+  EQUILIBRIUM_MOISTURE_CONTENT: {
+    suffix: "°C"
+  },
+};
+
 var Chart = (function(window, d3, self) {
   var svg, data, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
   var breakPoint = 320;
@@ -16,7 +31,7 @@ var Chart = (function(window, d3, self) {
 
   var viewport;
 
-  var selectedType = "temperature"
+  var selectedType = CHART_TYPE.TEMPERATURE
 
   initData(tags);
   //initialize chart
@@ -156,6 +171,7 @@ var Chart = (function(window, d3, self) {
     navViewport.call(viewport).selectAll("rect").attr("height", navHeight);
 
     xAxis.ticks(5);
+    yAxis.tickFormat(function(d) { return d + selectedType.suffix; });
     navXAxis.ticks(5);
 
     var xAxisElement = svg.select('.x.axis');
@@ -203,38 +219,38 @@ var Chart = (function(window, d3, self) {
   }
 
   function renderData(dataType) {
-    if(dataType === "temperature"){
+    if(dataType === CHART_TYPE.TEMPERATURE){
       // update tagPaths
       tagPaths.data(tagTemperatureReadings);
       navTagPaths.data(tagTemperatureReadings);
       // update yScale
       y = yTemperature;
       navY = navYTemperature;
-      selectedType = "temperature"
-    } else if (dataType === "relativeHumidity"){
+      selectedType = CHART_TYPE.TEMPERATURE;
+    } else if (dataType === CHART_TYPE.RELATIVE_HUMIDITY){
       // update tagPaths
       tagPaths.data(tagRelativeHumidityReadings);
       navTagPaths.data(tagRelativeHumidityReadings);
       // update yScale
       y = yRelativeHumidity;
       navY = navYRelativeHumidity;
-      selectedType = "relativeHumidity"
-    } else if (dataType === "dewPoint") {
+      selectedType = CHART_TYPE.RELATIVE_HUMIDITY;
+    } else if (dataType === CHART_TYPE.DEW_POINT) {
       // update tagPaths
       tagPaths.data(tagDewPointReadings);
       navTagPaths.data(tagDewPointReadings);
       // update yScale
       y = yDewPoint;
       navY = navYDewPoint;
-      selectedType = "dewPoint"
-    } else if (dataType === "equilibriumMoistureContent") {
+      selectedType = CHART_TYPE.DEW_POINT;
+    } else if (dataType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
       // update tagPaths
       tagPaths.data(tagEquilibriumMoistureContentReadings);
       navTagPaths.data(tagEquilibriumMoistureContentReadings);
       // update yScale
       y = yEquilibriumMoistureContent;
       navY = navYEquilibriumMoistureContent;
-      selectedType = "equilibriumMoistureContent"
+      selectedType = CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT;
     } else {
       console.log(dataType + " not recognised.");
       return;
@@ -258,17 +274,17 @@ var Chart = (function(window, d3, self) {
 window.addEventListener('resize', Chart.render);
 
 $( "#temperature" ).click(function() {
-  Chart.renderData("temperature");
+  Chart.renderData(CHART_TYPE.TEMPERATURE);
 });
 
 $( "#relative-humidity" ).click(function() {
-  Chart.renderData("relativeHumidity");
+  Chart.renderData(CHART_TYPE.RELATIVE_HUMIDITY);
 });
 
 $( "#dew-point" ).click(function() {
-  Chart.renderData("dewPoint");
+  Chart.renderData(CHART_TYPE.DEW_POINT);
 });
 
 $( "#equilibrium-moisture-content" ).click(function() {
-  Chart.renderData("equilibriumMoistureContent");
+  Chart.renderData(CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT);
 });
