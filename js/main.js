@@ -13,10 +13,10 @@ var CHART_TYPE = {
   },
 };
 
-var Chart = (function(window, d3, self) {
-  var svg, data, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
-  var breakPoint = 320;
+var Chart = (function(window, d3, tag_data, self) {
+  var data = tag_data;
 
+  var svg, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
   var navWidth, navHeight, navChart, navX, navY, navXAxis, navLine, navSvg, navChart, navTagPaths, navViewport;
 
   var tagTemperatureReadings = [];
@@ -28,20 +28,19 @@ var Chart = (function(window, d3, self) {
   var navYTemperature, navYRelativeHumidity, navYDewPoint, navYEquilibriumMoistureContent;
 
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
-
+  var breakPoint = 320;
   var viewport;
-
   var selectedType = CHART_TYPE.TEMPERATURE
+  var selectedTagId = "";
 
-  initData(tags);
+  initData();
   //initialize chart
   initChart();
   //render the chart
   render("init");
 
   //called once the data is loaded
-  function initData(json) {
-    data = json;
+  function initData() {
 
     var tagLogsArray = data.map(function (tag) {
       return (tag.tagLogs);
@@ -50,6 +49,9 @@ var Chart = (function(window, d3, self) {
     });
 
     data.forEach(function(tag) {
+      if(selectedTagId === ""){
+        selectedTagId = tag.id;
+      }
       var tagId = tag.id;
       var temperatureValues = [];
       var relativeHumidityValues = [];
@@ -79,14 +81,19 @@ var Chart = (function(window, d3, self) {
     var yDewPointExtent = d3.extent(tagLogsArray, function(d,i) { return d.dewPoint });
     var yEquilibriumMoistureContentExtent = d3.extent(tagLogsArray, function(d,i) { return d.equilibriumMoistureContent });
 
+    var yTemperatureAndDewPointExtent = [
+      Math.min(yTemperatureExtent[0], yDewPointExtent[0]),
+      Math.max(yTemperatureExtent[1], yDewPointExtent[1]),
+    ];
+
     yTemperature = d3.scale.linear().domain(yTemperatureExtent);
     yRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
-    yDewPoint = d3.scale.linear().domain(yDewPointExtent);
+    yDewPoint = d3.scale.linear().domain(yTemperatureAndDewPointExtent);
     yEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
 
     navYTemperature = d3.scale.linear().domain(yTemperatureExtent);
     navYRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
-    navYDewPoint = d3.scale.linear().domain(yDewPointExtent);
+    navYDewPoint = d3.scale.linear().domain(yTemperatureAndDewPointExtent);
     navYEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
   }
 
@@ -201,8 +208,10 @@ var Chart = (function(window, d3, self) {
     navXAxisElement.attr('transform', 'translate(0,' + navHeight + ')')
       .call(navXAxis);
 
-    localTagPaths.attr("d", function(d) { return line(d.values); });
-    localNavTagPaths.attr("d", function(d) { return navLine(d.values); });
+    localTagPaths.attr("d", function(d) { return line(d.values); })
+      .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
+    localNavTagPaths.attr("d", function(d) { return navLine(d.values); })
+      .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
   }
 
   function updateDimensions(newWidth) {
@@ -259,17 +268,21 @@ var Chart = (function(window, d3, self) {
     tagPaths.exit().remove();
   }
 
-  function renderFrom(date) {
-    //TODO
+  function selectTag(tagId) {
+    selectedTagId = tagId;
+    render();
   }
 
   return {
     render: render,
     renderData: function(dataType) {
-        return renderData(dataType);
+      return renderData(dataType);
+    },
+    selectTag: function(tagId){
+      selectTag(tagId);
     }
   }
-})(window, d3, this);
+})(window, d3, tags, this);
 
 window.addEventListener('resize', Chart.render);
 
