@@ -111,10 +111,12 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     //the path generator for the line chart
     line = d3.svg.line()
+      .interpolate("basis")
       .x(function(d) { return x(timeFormat.parse(d.date)) })
       .y(function(d) { return y(d.y) });
 
     navLine = d3.svg.line()
+      .interpolate("basis")
       .x(function (d) { return navX(timeFormat.parse(d.date)) })
       .y(function (d) { return navY(d.y) });
 
@@ -142,7 +144,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
         .data(tagTemperatureReadings)
         .enter().append("g")
         .attr("class", "tag")
-        .append("path");
+        .append("path")
+        .attr("class", "line");
 
     differenceContainer = area.selectAll(".difference-container")
         .data([selectedTagDewPointData])
@@ -174,7 +177,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .data(tagTemperatureReadings)
       .enter().append("g")
       .attr("class", "tag")
-      .append("path");
+      .append("path")
+      .attr("class", "line");
 
     viewport = d3.svg.brush()
       .x(navX)
@@ -213,18 +217,21 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     yAxis.tickFormat(function(d) { return d + selectedType.suffix; });
     navXAxis.ticks(5);
 
-    var xAxisElement = svg.select('.x.axis');
-    var yAxisElement = svg.select('.y.axis');
-    var localTagPaths = tagPaths.attr("class", "line");
-    var navXAxisElement = navSvg.select('.x.axis');
-    var localNavTagPaths = navTagPaths.attr("class", "line");
+    var transitionElement = svg.transition();
+    var navTransitionElement = navSvg.transition();
+
+    var xAxisElement = transitionElement.select('.x.axis');
+    var yAxisElement = transitionElement.select('.y.axis');
+    var localTagPaths = transitionElement.selectAll(".tag path");
+    var navXAxisElement = navTransitionElement.select('.x.axis');
+    var localNavTagPaths = navTransitionElement.selectAll(".tag path");
 
     if(event == null){
-      xAxisElement = xAxisElement.transition().duration(1000);
-      yAxisElement = yAxisElement.transition().duration(1000);
-      localTagPaths = localTagPaths.transition().duration(1000);
-      navXAxisElement = navXAxisElement.transition().duration(1000);
-      localNavTagPaths = localNavTagPaths.transition().duration(1000);
+      xAxisElement = xAxisElement.duration(1000);
+      yAxisElement = yAxisElement.duration(1000);
+      localTagPaths = localTagPaths.duration(1000);
+      navXAxisElement = navXAxisElement.duration(1000);
+      localNavTagPaths = localNavTagPaths.duration(1000);
     }
 
     //update the axis and line
@@ -243,11 +250,12 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     if(selectedType == CHART_TYPE.DEW_POINT){
       differenceAbove.style('opacity', 0.6);
       differenceBelow.style('opacity', 0.6);
+
       if(event == null){
-        clipBelow.transition().duration(1000).attr("d", difference.y0(height));
-        clipAbove.transition().duration(1000).attr("d", difference.y0(0));
-        differenceAbove.transition().duration(1000).attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
-        differenceBelow.transition().duration(1000).attr("d", difference);
+        transitionElement.select("#clip-below path").duration(1000).attr("d", difference.y0(height));
+        transitionElement.select("#clip-above path").duration(1000).attr("d", difference.y0(0));
+        transitionElement.select(".difference.above").duration(1000).attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
+        transitionElement.select(".difference.below").duration(1000).attr("d", difference);
       } else {
         clipBelow.attr("d", difference.y0(height));
         clipAbove.attr("d", difference.y0(0));
