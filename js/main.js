@@ -1,3 +1,5 @@
+var firstSelectedTagId = "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d"
+
 var CHART_TYPE = {
   TEMPERATURE: {
     suffix: "°C"
@@ -13,8 +15,8 @@ var CHART_TYPE = {
   },
 };
 
-var Chart = (function(window, d3, tag_data, self) {
-  var data = tag_data;
+var Chart = (function(window, d3, tagData, selectedTagId, self) {
+  var data = tagData;
 
   var svg, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
   var navWidth, navHeight, navChart, navX, navY, navXAxis, navLine, navSvg, navChart, navTagPaths, navViewport;
@@ -27,11 +29,13 @@ var Chart = (function(window, d3, tag_data, self) {
   var yTemperature, yRelativeHumidity, yDewPoint, yEquilibriumMoistureContent;
   var navYTemperature, navYRelativeHumidity, navYDewPoint, navYEquilibriumMoistureContent;
 
+  var difference, differenceContainer, clipBelow, clipAbove, differenceAbove, differenceBelow;
+
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
   var breakPoint = 320;
   var viewport;
   var selectedType = CHART_TYPE.TEMPERATURE
-  var selectedTagId = "";
+  var selectedTagId, selectedTagDewPointData;
 
   initData();
   //initialize chart
@@ -41,7 +45,6 @@ var Chart = (function(window, d3, tag_data, self) {
 
   //called once the data is loaded
   function initData() {
-
     var tagLogsArray = data.map(function (tag) {
       return (tag.tagLogs);
     }).reduce(function(a, b) {
@@ -49,9 +52,6 @@ var Chart = (function(window, d3, tag_data, self) {
     });
 
     data.forEach(function(tag) {
-      if(selectedTagId === ""){
-        selectedTagId = tag.id;
-      }
       var tagId = tag.id;
       var temperatureValues = [];
       var relativeHumidityValues = [];
@@ -61,7 +61,7 @@ var Chart = (function(window, d3, tag_data, self) {
       tag.tagLogs.forEach(function(tagLog) {
         temperatureValues.push({ date: tagLog.readingAt, y: tagLog.temperature });
         relativeHumidityValues.push({ date: tagLog.readingAt, y: tagLog.relativeHumidity });
-        dewPointValues.push({ date: tagLog.readingAt, y: tagLog.dewPoint });
+        dewPointValues.push({ date: tagLog.readingAt, y: tagLog.temperature, dewPoint: tagLog.dewPoint });
         tagEquilibriumMoistureContentValues.push({ date: tagLog.readingAt, y: tagLog.equilibriumMoistureContent });
       });
 
@@ -95,6 +95,8 @@ var Chart = (function(window, d3, tag_data, self) {
     navYRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
     navYDewPoint = d3.scale.linear().domain(yTemperatureAndDewPointExtent);
     navYEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
+
+    selectTag(selectedTagId);
   }
 
   function initChart(){
@@ -116,6 +118,15 @@ var Chart = (function(window, d3, tag_data, self) {
       .x(function (d) { return navX(timeFormat.parse(d.date)) })
       .y(function (d) { return navY(d.y) });
 
+    difference = d3.svg.area()
+      .interpolate("basis")
+      .x(function(d) { return x(timeFormat.parse(d.date)) })
+      .y1(function(d) { return y(d.y) });
+
+    differenceLine = d3.svg.line()
+      .x(function(d) { return x(timeFormat.parse(d.date)) })
+      .y(function(d) { return y(d.dewPoint) });
+
     //initialize svg with temperature readings
     svg = d3.select('#chart').append('svg');
     chart = svg.append('g');
@@ -132,6 +143,27 @@ var Chart = (function(window, d3, tag_data, self) {
         .enter().append("g")
         .attr("class", "tag")
         .append("path");
+
+    differenceContainer = area.selectAll(".difference-container")
+        .data([selectedTagDewPointData])
+        .enter().append("g")
+        .attr("class", "difference-container");
+
+    clipBelow = differenceContainer.append("clipPath")
+      .attr("id", "clip-below")
+      .append("path");
+
+    clipAbove = differenceContainer.append("clipPath")
+      .attr("id", "clip-above")
+      .append("path");
+
+    differenceAbove = differenceContainer.append("path")
+      .attr("class", "difference above")
+      .attr("clip-path", "url(#clip-above)");
+
+    differenceBelow = differenceContainer.append("path")
+      .attr("class", "difference below")
+      .attr("clip-path", "url(#clip-below)");
 
     navSvg = d3.select('#chart').append('svg')
       .classed('navigator', true);
@@ -208,6 +240,25 @@ var Chart = (function(window, d3, tag_data, self) {
     navXAxisElement.attr('transform', 'translate(0,' + navHeight + ')')
       .call(navXAxis);
 
+    if(selectedType == CHART_TYPE.DEW_POINT){
+      differenceAbove.style('opacity', 0.6);
+      differenceBelow.style('opacity', 0.6);
+      if(event == null){
+        clipBelow.transition().duration(1000).attr("d", difference.y0(height));
+        clipAbove.transition().duration(1000).attr("d", difference.y0(0));
+        differenceAbove.transition().duration(1000).attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
+        differenceBelow.transition().duration(1000).attr("d", difference);
+      } else {
+        clipBelow.attr("d", difference.y0(height));
+        clipAbove.attr("d", difference.y0(0));
+        differenceAbove.attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
+        differenceBelow.attr("d", difference);
+      }
+    } else {
+      differenceAbove.style('opacity', 0);
+      differenceBelow.style('opacity', 0);
+    }
+
     localTagPaths.attr("d", function(d) { return line(d.values); })
       .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
     localNavTagPaths.attr("d", function(d) { return navLine(d.values); })
@@ -225,6 +276,14 @@ var Chart = (function(window, d3, tag_data, self) {
 
     navWidth = width;
     navHeight = 100 - margin.top - margin.bottom;
+  }
+
+  function setSelectedTagDewPointData(tagId){
+    tagDewPointReadings.forEach(function(tag) {
+      if(tagId === tag.id){
+        selectedTagDewPointData = tag.values;
+      }
+    });
   }
 
   function renderData(dataType) {
@@ -265,12 +324,12 @@ var Chart = (function(window, d3, tag_data, self) {
       return;
     }
     render();
-    tagPaths.exit().remove();
+    // tagPaths.exit().remove();
   }
 
   function selectTag(tagId) {
     selectedTagId = tagId;
-    render();
+    setSelectedTagDewPointData(selectedTagId);
   }
 
   return {
@@ -280,9 +339,10 @@ var Chart = (function(window, d3, tag_data, self) {
     },
     selectTag: function(tagId){
       selectTag(tagId);
+      render();
     }
   }
-})(window, d3, tags, this);
+})(window, d3, tags, firstSelectedTagId, this);
 
 window.addEventListener('resize', Chart.render);
 

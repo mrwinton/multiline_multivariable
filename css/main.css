@@ -45,6 +45,14 @@
      stroke-width: 1.5px;
    }
 
+   .difference.above {
+     fill: rgb(252,141,89);
+   }
+
+   .difference.below {
+     fill: rgb(145,207,96);
+   }
+
    .navigator .data {
        fill: lightgrey;
        stroke-width: 0px;
