@@ -248,14 +248,11 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .call(navXAxis);
 
     if(selectedType == CHART_TYPE.DEW_POINT){
-      differenceAbove.style('opacity', 0.6);
-      differenceBelow.style('opacity', 0.6);
-
       if(event == null){
         transitionElement.select("#clip-below path").duration(1000).attr("d", difference.y0(height));
         transitionElement.select("#clip-above path").duration(1000).attr("d", difference.y0(0));
-        transitionElement.select(".difference.above").duration(1000).attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
-        transitionElement.select(".difference.below").duration(1000).attr("d", difference);
+        transitionElement.select(".difference.above").duration(1000).style('opacity', 0.6).attr("d", difference.y0(function(d) { return y(d.dewPoint); }));
+        transitionElement.select(".difference.below").duration(1000).style('opacity', 0.6).attr("d", difference);
       } else {
         clipBelow.attr("d", difference.y0(height));
         clipAbove.attr("d", difference.y0(0));
