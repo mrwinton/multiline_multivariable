@@ -260,8 +260,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
         differenceBelow.attr("d", difference);
       }
     } else {
-      differenceAbove.style('opacity', 0);
-      differenceBelow.style('opacity', 0);
+      transitionElement.select(".difference.above").duration(1000).style('opacity', 0);
+      transitionElement.select(".difference.below").duration(1000).style('opacity', 0);
+
     }
 
     localTagPaths.attr("d", function(d) { return line(d.values); })
