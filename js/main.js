@@ -34,6 +34,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
   var breakPoint = 320;
   var viewport;
+  var timeout;
 
   var selectedType = CHART_TYPE.TEMPERATURE;
   var selectedTagId;
@@ -191,7 +192,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .x(navX)
       .on("brush", function () {
           x.domain(viewport.empty() ? navX.domain() : viewport.extent());
-          render();
+          debounce_render();
       });
 
     navViewport = navChart.append("g")
@@ -353,6 +354,15 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
         selectedTagData[dataType] = tag.values;
       }
     });
+  }
+
+  function debounce(fn, waitPeriod){
+    clearTimeout(timeout);
+    timeout = setTimeout(fn, waitPeriod);
+  }
+
+  function debounce_render(){
+    debounce(render, 150);
   }
 
   return {
