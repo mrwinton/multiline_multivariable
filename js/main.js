@@ -34,8 +34,15 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
   var breakPoint = 320;
   var viewport;
-  var selectedType = CHART_TYPE.TEMPERATURE
-  var selectedTagId, selectedTagDewPointData;
+
+  var selectedType = CHART_TYPE.TEMPERATURE;
+  var selectedTagId;
+  var selectedTagData = {
+    TEMPERATURE: [],
+    RELATIVE_HUMIDITY: [],
+    DEW_POINT: [],
+    EQUILIBRIUM_MOISTURE_CONTENT: [],
+  };
 
   initData();
   //initialize chart
@@ -148,7 +155,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
         .attr("class", "line");
 
     differenceContainer = area.selectAll(".difference-container")
-        .data([selectedTagDewPointData])
+        .data([selectedTagData.DEW_POINT])
         .enter().append("g")
         .attr("class", "difference-container");
 
@@ -284,14 +291,6 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     navHeight = 100 - margin.top - margin.bottom;
   }
 
-  function setSelectedTagDewPointData(tagId){
-    tagDewPointReadings.forEach(function(tag) {
-      if(tagId === tag.id){
-        selectedTagDewPointData = tag.values;
-      }
-    });
-  }
-
   function renderData(dataType) {
     if(dataType === CHART_TYPE.TEMPERATURE){
       // update tagPaths
@@ -313,6 +312,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       // update tagPaths
       tagPaths.data(tagDewPointReadings);
       navTagPaths.data(tagDewPointReadings);
+      //update difference
+      differenceContainer.data(selectedTagData.DEW_POINT)
       // update yScale
       y = yDewPoint;
       navY = navYDewPoint;
@@ -335,7 +336,23 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   function selectTag(tagId) {
     selectedTagId = tagId;
-    setSelectedTagDewPointData(selectedTagId);
+    [
+      { TEMPERATURE: tagTemperatureReadings },
+      { RELATIVE_HUMIDITY: tagRelativeHumidityReadings },
+      { DEW_POINT: tagDewPointReadings },
+      { EQUILIBRIUM_MOISTURE_CONTENT: tagEquilibriumMoistureContentReadings },
+    ].forEach(function(entry) {
+      var dataType = Object.keys(entry)[0];
+      setSelectedTagData(tagId, dataType, entry[dataType]);
+    }, this);
+  }
+
+  function setSelectedTagData(tagId, dataType, tagData){
+    tagData.forEach(function(tag) {
+      if(tagId === tag.id){
+        selectedTagData[dataType] = tag.values;
+      }
+    });
   }
 
   return {
