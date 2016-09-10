@@ -31,7 +31,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   var difference, differenceContainer, clipBelow, clipAbove, differenceAbove, differenceBelow;
 
-  var target, locator, tooltip, touchScale, viewportScale;
+  var target, locator, tooltip, touchScale;
 
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
   var breakPoint = 320;
@@ -119,9 +119,6 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     //initialize y scale as temperature
     y = yTemperature;
     navY = navYTemperature;
-
-    //initialize touch scale
-    viewportScale = d3.scale.linear();
 
     //the path generator for the line chart
     line = d3.svg.line()
@@ -230,8 +227,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     navY.range([navHeight, 0]);
 
     //update the touch scale
-    // viewportScale.domain([0, width]).range(viewportExtent());
-    touchScale.range([0, getSelectedTagData().length-1]).clamp(true);
+    touchScale.range([1, getSelectedTagData().length-1]).clamp(true);
 
     //update svg elements to new dimensions
     svg.attr('width', width + margin.left + margin.right)
@@ -432,16 +428,6 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
   function showTooltip() {
   	// tooltip.style('visibility', 'visible');
   	locator.style('display', 'block');
-  }
-
-  function viewportExtent(){
-    var extentElement = navViewport.select('.extent');
-    if(!extentElement.empty()){
-      var min = parseFloat(extentElement.attr('x'));
-      var max = min + parseFloat(extentElement.attr('width'));
-      return [min, max];
-    }
-    return [0, width];
   }
 
   return {
