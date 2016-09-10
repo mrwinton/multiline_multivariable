@@ -31,6 +31,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   var difference, differenceContainer, clipBelow, clipAbove, differenceAbove, differenceBelow;
 
+  var target, locator, tooltip, touchScale, viewportScale;
+
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
   var breakPoint = 320;
   var viewport;
@@ -83,6 +85,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     var xExtent = d3.extent(tagLogsArray, function(d,i) { return timeFormat.parse(d.readingAt) });
     x = d3.time.scale().domain(xExtent);
     navX = d3.time.scale().domain(xExtent);
+    touchScale = d3.time.scale().domain(xExtent);
 
     var yTemperatureExtent = d3.extent(tagLogsArray, function(d,i) { return d.temperature });
     var yRelativeHumidityExtent = d3.extent(tagLogsArray, function(d,i) { return d.relativeHumidity });
@@ -117,6 +120,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     y = yTemperature;
     navY = navYTemperature;
 
+    //initialize touch scale
+    viewportScale = d3.scale.linear();
+
     //the path generator for the line chart
     line = d3.svg.line()
       .interpolate("basis")
@@ -145,20 +151,21 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
         .attr('id', 'plotAreaClip')
         .append('rect');
 
-    chart.append('g').classed('x axis', true);
-    chart.append('g').classed('y axis', true);
+    chart.append('g').classed('x axis', true).style("pointer-events", "none");
+    chart.append('g').classed('y axis', true).style("pointer-events", "none");
 
     tagPaths = area.selectAll(".tag")
         .data(tagTemperatureReadings)
         .enter().append("g")
         .attr("class", "tag")
         .append("path")
-        .attr("class", "line");
+        .attr("class", "line")
+        .style("pointer-events", "none");
 
     differenceContainer = area.selectAll(".difference-container")
-        .data([selectedTagData.DEW_POINT])
-        .enter().append("g")
-        .attr("class", "difference-container");
+      .data([selectedTagData.DEW_POINT])
+      .enter().append("g")
+      .attr("class", "difference-container");
 
     clipBelow = differenceContainer.append("clipPath")
       .attr("id", "clip-below")
@@ -170,11 +177,23 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     differenceAbove = differenceContainer.append("path")
       .attr("class", "difference above")
-      .attr("clip-path", "url(#clip-above)");
+      .attr("clip-path", "url(#clip-above)")
+      .style("pointer-events", "none");
 
     differenceBelow = differenceContainer.append("path")
       .attr("class", "difference below")
-      .attr("clip-path", "url(#clip-below)");
+      .attr("clip-path", "url(#clip-below)")
+      .style("pointer-events", "none");
+
+    target = area.append('rect')
+      .style("fill", "none")
+      .style("pointer-events", "all");
+
+    locator = area.append('circle')
+      .style('display', 'none')
+      .attr('r', 2)
+      .attr('fill', '#f00')
+      .style("pointer-events", "none");
 
     navSvg = d3.select('#chart').append('svg')
       .classed('navigator', true);
@@ -191,8 +210,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     viewport = d3.svg.brush()
       .x(navX)
       .on("brush", function () {
-          x.domain(viewport.empty() ? navX.domain() : viewport.extent());
-          debounce_render();
+        x.domain(viewport.empty() ? navX.domain() : viewport.extent());
+        debounceRender();
       });
 
     navViewport = navChart.append("g")
@@ -210,11 +229,20 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     navX.range([0, navWidth]);
     navY.range([navHeight, 0]);
 
+    //update the touch scale
+    // viewportScale.domain([0, width]).range(viewportExtent());
+    touchScale.range([0, getSelectedTagData().length-1]).clamp(true);
+
     //update svg elements to new dimensions
     svg.attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom);
     chart.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+    target.attr({ width: width, height: height });
     clip.attr({ width: width, height: height });
+
+    target.on("mouseout", function() { hideTooltip(); })
+      .on("mousemove", moveLocator)
+      .on("mouseover", function() { showTooltip(); });
 
     navSvg.attr('width', navWidth + margin.left + margin.right)
       .attr('height', navHeight + margin.top + margin.bottom);
@@ -356,13 +384,64 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     });
   }
 
+  function getSelectedTagData(){
+    if(selectedType === CHART_TYPE.TEMPERATURE){
+      return selectedTagData.TEMPERATURE
+    } else if (selectedType === CHART_TYPE.RELATIVE_HUMIDITY){
+      return selectedTagData.RELATIVE_HUMIDITY
+    } else if (selectedType === CHART_TYPE.DEW_POINT) {
+      return selectedTagData.DEW_POINT
+    } else if (selectedType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
+      return selectedTagData.EQUILIBRIUM_MOISTURE_CONTENT
+    }
+  }
+
   function debounce(fn, waitPeriod){
     clearTimeout(timeout);
     timeout = setTimeout(fn, waitPeriod);
   }
 
-  function debounce_render(){
+  function debounceRender(){
     debounce(render, 150);
+  }
+
+  function moveLocator() {
+    // Coords of mousemove event relative to the container div
+  	var coords = d3.mouse(area.node());
+
+  	// Value on the x scale corresponding to this location
+  	var xVal = x.invert(coords[0]);
+
+    var index = Math.ceil(touchScale(xVal));
+
+    var d = getSelectedTagData()[index];
+
+    locator.attr({
+      cx : x(timeFormat.parse(d.date)),
+      cy : y(d.y)
+    });
+  }
+
+  // Function for hiding the tooltip
+  function hideTooltip() {
+  	// tooltip.style('visibility', 'hidden');
+  	locator.style('display', 'none');
+  }
+
+  // Function for showing the tooltip
+  function showTooltip() {
+  	// tooltip.style('visibility', 'visible');
+  	locator.style('display', 'block');
+  }
+
+  function viewportExtent(){
+    var extentElement = navViewport.select('.extent');
+    if(!extentElement.empty()){
+      var min = parseFloat(extentElement.attr('x'));
+      var max = min + parseFloat(extentElement.attr('width'));
+      return [min, max];
+    }
+    return [0, width];
   }
 
   return {
