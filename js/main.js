@@ -122,12 +122,10 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     //the path generator for the line chart
     line = d3.svg.line()
-      .interpolate("basis")
       .x(function(d) { return x(timeFormat.parse(d.date)) })
       .y(function(d) { return y(d.y) });
 
     navLine = d3.svg.line()
-      .interpolate("basis")
       .x(function (d) { return navX(timeFormat.parse(d.date)) })
       .y(function (d) { return navY(d.y) });
 
@@ -187,9 +185,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .style("pointer-events", "all");
 
     locator = area.append('circle')
-      .style('display', 'none')
+      .style('opacity', 0.0)
       .attr('r', 2)
-      .attr('fill', '#f00')
+      .attr("class", "locator")
       .style("pointer-events", "none");
 
     navSvg = d3.select('#chart').append('svg')
@@ -227,7 +225,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     navY.range([navHeight, 0]);
 
     //update the touch scale
-    touchScale.range([1, getSelectedTagData().length-1]).clamp(true);
+    touchScale.range([0, getSelectedTagData().length-1]).clamp(true);
 
     //update svg elements to new dimensions
     svg.attr('width', width + margin.left + margin.right)
@@ -407,10 +405,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   	// Value on the x scale corresponding to this location
   	var xVal = x.invert(coords[0]);
+    var index = Math.floor(touchScale(xVal));
 
-    var index = Math.ceil(touchScale(xVal));
-
-    var d = getSelectedTagData()[index];
+    var d = getClosestReading(xVal, index);
 
     locator.attr({
       cx : x(timeFormat.parse(d.date)),
@@ -418,16 +415,41 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     });
   }
 
+  function getClosestReading(date, index){
+    var reading = null;
+    var index = index;
+    var bestDifference = -Math.abs((new Date(0,0,0)).valueOf());
+    var gettingCloser = true;
+
+    while(gettingCloser){
+      var currentReading = getSelectedTagData()[index];
+      var currentDifference = date - timeFormat.parse(currentReading.date);
+
+      if(currentDifference < 0 && currentDifference > bestDifference){
+          index -= 1;
+          bestDifference = currentDifference;
+          reading = currentReading;
+      } else {
+        gettingCloser = false;
+        if(reading == null){
+          reading = currentReading;
+        }
+      }
+    }
+
+    return reading;
+  }
+
   // Function for hiding the tooltip
   function hideTooltip() {
   	// tooltip.style('visibility', 'hidden');
-  	locator.style('display', 'none');
+  	locator.transition().duration(500).style('opacity', 0.0);
   }
 
   // Function for showing the tooltip
   function showTooltip() {
   	// tooltip.style('visibility', 'visible');
-  	locator.style('display', 'block');
+  	locator.transition().duration(1000).style('display', 'block').style('opacity', 0.8);
   }
 
   return {
