@@ -510,12 +510,11 @@ OverviewChart.prototype._moveLocator = function () {
     //get dimensions of tooltip element
     var dim = this.tooltip.node().getBoundingClientRect();
 
-    //update the position of the tooltip. By default, above and to the right of the mouse cursor.
+    //update the position of the tooltip
     var tooltipTop = this.y(reading.y), //TODO follow mouse? coords[1] + dim.height - 5,
         tooltipLeft = coords[0] + (dim.width / 2);
 
-    //if right edge of tooltip goes beyond chart container, force it to move
-    //to the left of the mouse cursor.
+    //if right edge of tooltip goes beyond chart container, force it to move to the left of the mouse cursor
     if (tooltipLeft + (dim.width / 2) > this.width) {
         tooltipLeft = coords[0] - (dim.width / 2);
     }
