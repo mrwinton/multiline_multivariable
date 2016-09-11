@@ -1,4 +1,4 @@
-var chart = new OverviewChart('#chart');
+var chart = new BuildingOverviewChart('#chart');
 
 chart.initData(tags, "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d");
 //initialize chart

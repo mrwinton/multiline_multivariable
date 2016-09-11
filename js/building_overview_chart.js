@@ -1,4 +1,4 @@
-function OverviewChart(element) {
+function BuildingOverviewChart(element) {
     //root element
     this.element = element;
 
@@ -82,7 +82,7 @@ function OverviewChart(element) {
     this.timeout = null;
 }
 
-OverviewChart.prototype.initData = function (data, selectedTagId) {
+BuildingOverviewChart.prototype.initData = function (data, selectedTagId) {
     var self = this;
     this.data = data;
 
@@ -150,7 +150,7 @@ OverviewChart.prototype.initData = function (data, selectedTagId) {
     this._selectTag(selectedTagId);
 };
 
-OverviewChart.prototype.initChart = function () {
+BuildingOverviewChart.prototype.initChart = function () {
     var self = this;
     //initialize axis
     this.xAxis = d3.svg.axis().orient('bottom');
@@ -272,7 +272,7 @@ OverviewChart.prototype.initChart = function () {
         .attr("class", "viewport");
 };
 
-OverviewChart.prototype.render = function (event) {
+BuildingOverviewChart.prototype.render = function (event) {
     var self = this;
     //get dimensions based on window size
     var newWidth = $('#chart').width();
@@ -382,7 +382,7 @@ OverviewChart.prototype.render = function (event) {
     });
 };
 
-OverviewChart.prototype.renderData = function (dataType) {
+BuildingOverviewChart.prototype.renderData = function (dataType) {
     if (dataType === CHART_TYPE.TEMPERATURE) {
         //update tagPaths
         this.tagPaths.data(this.tagTemperatureReadings);
@@ -425,7 +425,7 @@ OverviewChart.prototype.renderData = function (dataType) {
     this.render();
 };
 
-OverviewChart.prototype._updateDimensions = function (newWidth) {
+BuildingOverviewChart.prototype._updateDimensions = function (newWidth) {
     this.margin.top = 20;
     this.margin.right = newWidth < this.breakPoint ? 0 : 50;
     this.margin.left = newWidth < this.breakPoint ? 0 : 50;
@@ -438,7 +438,7 @@ OverviewChart.prototype._updateDimensions = function (newWidth) {
     this.navHeight = 100 - this.margin.top - this.margin.bottom;
 };
 
-OverviewChart.prototype._selectTag = function (tagId) {
+BuildingOverviewChart.prototype._selectTag = function (tagId) {
     this.selectedTagId = tagId;
     [
         {TEMPERATURE: this.tagTemperatureReadings},
@@ -451,7 +451,7 @@ OverviewChart.prototype._selectTag = function (tagId) {
     }, this);
 };
 
-OverviewChart.prototype._setSelectedTagData = function (tagId, dataType, tagData) {
+BuildingOverviewChart.prototype._setSelectedTagData = function (tagId, dataType, tagData) {
     tagData.forEach(function (tag) {
         if (tagId === tag.id) {
             this.selectedTagData[dataType] = tag.values;
@@ -459,7 +459,7 @@ OverviewChart.prototype._setSelectedTagData = function (tagId, dataType, tagData
     }, this);
 };
 
-OverviewChart.prototype._getSelectedTagData = function () {
+BuildingOverviewChart.prototype._getSelectedTagData = function () {
     if (this.selectedType === CHART_TYPE.TEMPERATURE) {
         return this.selectedTagData.TEMPERATURE
     } else if (this.selectedType === CHART_TYPE.RELATIVE_HUMIDITY) {
@@ -471,24 +471,24 @@ OverviewChart.prototype._getSelectedTagData = function () {
     }
 };
 
-OverviewChart.prototype._focus = function () {
+BuildingOverviewChart.prototype._focus = function () {
     this.x.domain(this.viewport.empty() ? this.navX.domain() : this.viewport.extent());
     this._debounceRender();
 };
 
-OverviewChart.prototype._debounceRender = function () {
+BuildingOverviewChart.prototype._debounceRender = function () {
     var self = this;
     this._debounce(function () {
         self.render();
     }, 150);
 };
 
-OverviewChart.prototype._debounce = function (fn, waitPeriod) {
+BuildingOverviewChart.prototype._debounce = function (fn, waitPeriod) {
     clearTimeout(this.timeout);
     this.timeout = setTimeout(fn, waitPeriod);
 };
 
-OverviewChart.prototype._moveLocator = function () {
+BuildingOverviewChart.prototype._moveLocator = function () {
     //coords of mouse move event relative to the container div
     var coords = d3.mouse(this.area.node());
     //value on the x scale corresponding to this location
@@ -530,7 +530,7 @@ OverviewChart.prototype._moveLocator = function () {
     }
 };
 
-OverviewChart.prototype._getClosestReading = function (date, index) {
+BuildingOverviewChart.prototype._getClosestReading = function (date, index) {
     var reading = null;
     var bestDifference = -Math.abs((new Date(0, 0, 0)).valueOf());
     var gettingCloser = true;
@@ -554,12 +554,12 @@ OverviewChart.prototype._getClosestReading = function (date, index) {
     return reading;
 };
 
-OverviewChart.prototype._hideTooltip = function () {
+BuildingOverviewChart.prototype._hideTooltip = function () {
     this.tooltip.style('visibility', 'hidden');
     this.locator.transition().duration(500).style('opacity', 0.0);
 };
 
-OverviewChart.prototype._showTooltip = function () {
+BuildingOverviewChart.prototype._showTooltip = function () {
     this.tooltip.style('visibility', 'visible');
     this.locator.transition().duration(1000).style('display', 'block').style('opacity', 1);
 };
