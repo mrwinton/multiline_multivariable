@@ -18,7 +18,7 @@ var CHART_TYPE = {
 var Chart = (function(window, d3, tagData, selectedTagId, self) {
   var data = tagData;
 
-  var svg, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
+  var container, svg, x, y, xAxis, yAxis, dim, chart, area, clip, line, tagPaths, margin = {}, width, height;
   var navWidth, navHeight, navChart, navX, navY, navXAxis, navLine, navSvg, navChart, navTagPaths, navViewport;
 
   var tagTemperatureReadings = [];
@@ -31,9 +31,10 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   var difference, differenceContainer, clipBelow, clipAbove, differenceAbove, differenceBelow;
 
-  var target, locator, tooltip, touchScale;
+  var target, locator, tooltip, tooltipKey, tooltipValue, touchScale;
 
   var timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
+  var niceTimeFormat = d3.time.format('%a %e, %b %_I:%M%p');
   var breakPoint = 320;
   var viewport;
   var timeout;
@@ -130,7 +131,6 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .y(function (d) { return navY(d.y) });
 
     difference = d3.svg.area()
-      .interpolate("basis")
       .x(function(d) { return x(timeFormat.parse(d.date)) })
       .y1(function(d) { return y(d.y) });
 
@@ -139,7 +139,8 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .y(function(d) { return y(d.dewPoint) });
 
     //initialize svg with temperature readings
-    svg = d3.select('#chart').append('svg');
+    container = d3.select('#chart').style('position', 'relative');
+    svg = container.append('svg');
     chart = svg.append('g');
     area = chart.append('g').attr('clip-path', 'url(#plotAreaClip)');
     clip = area.append('clipPath')
@@ -148,6 +149,15 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     chart.append('g').classed('x axis', true).style("pointer-events", "none");
     chart.append('g').classed('y axis', true).style("pointer-events", "none");
+
+    tooltip = container.append('div')
+      .attr("class", "tooltip");
+
+    tooltipKey = tooltip.append('div')
+      .attr("class", "key");
+
+    tooltipValue = tooltip.append('div')
+      .attr("class", "value");
 
     tagPaths = area.selectAll(".tag")
         .data(tagTemperatureReadings)
@@ -186,7 +196,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     locator = area.append('circle')
       .style('opacity', 0.0)
-      .attr('r', 2)
+      .attr('r', 3)
       .attr("class", "locator")
       .style("pointer-events", "none");
 
@@ -407,12 +417,39 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
   	var xVal = x.invert(coords[0]);
     var index = Math.floor(touchScale(xVal));
 
-    var d = getClosestReading(xVal, index);
+    var reading = getClosestReading(xVal, index);
 
     locator.attr({
-      cx : x(timeFormat.parse(d.date)),
-      cy : y(d.y)
+      cx : x(timeFormat.parse(reading.date)),
+      cy : y(reading.y)
     });
+
+    // Update tooltip content
+  	setTooltip(reading);
+
+  	// Get dimensions of tooltip element
+  	var dim = tooltip.node().getBoundingClientRect();
+
+  	// Update the position of the tooltip. By default, above and to the right
+  	// of the mouse cursor.
+  	var tooltip_top = y(reading.y), //coords[1] + dim.height - 5,
+  	    tooltip_left = coords[0] + (dim.width / 2);
+
+  	// If right edge of tooltip goes beyond chart container, force it to move
+  	// to the left of the mouse cursor.
+  	if (tooltip_left + (dim.width/2) > width){
+  		tooltip_left = coords[0] - (dim.width / 2);
+    }
+
+  	tooltip.style({
+  		top: tooltip_top + 'px',
+  		left: tooltip_left + 'px'
+  	});
+
+  	// Show tooltip if it is not already visible
+  	if (tooltip.style('visibility') != 'visible'){
+      showTooltip();
+    }
   }
 
   function getClosestReading(date, index){
@@ -442,14 +479,20 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   // Function for hiding the tooltip
   function hideTooltip() {
-  	// tooltip.style('visibility', 'hidden');
+  	tooltip.style('visibility', 'hidden');
   	locator.transition().duration(500).style('opacity', 0.0);
   }
 
   // Function for showing the tooltip
   function showTooltip() {
-  	// tooltip.style('visibility', 'visible');
-  	locator.transition().duration(1000).style('display', 'block').style('opacity', 0.8);
+  	tooltip.style('visibility', 'visible');
+  	locator.transition().duration(1000).style('display', 'block').style('opacity', 1);
+  }
+
+  function setTooltip(reading) {
+    var date = timeFormat.parse(reading.date);
+    tooltipKey.html(niceTimeFormat(date));
+    tooltipValue.html(reading.y + selectedType.suffix);
   }
 
   return {
