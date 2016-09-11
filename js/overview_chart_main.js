@@ -1,6 +1,6 @@
-var chart = new OverviewChart(tags);
+var chart = new OverviewChart('#chart');
 
-chart.initData("fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d");
+chart.initData(tags, "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d");
 //initialize chart
 chart.initChart();
 //render the chart

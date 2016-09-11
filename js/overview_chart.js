@@ -1,6 +1,9 @@
-function OverviewChart(data) {
-    // data
-    this.data = data;
+function OverviewChart(element) {
+    //root element
+    this.element = element;
+
+    //data
+    this.data = null;
     this.tagTemperatureReadings = [];
     this.tagRelativeHumidityReadings = [];
     this.tagDewPointReadings = [];
@@ -79,8 +82,9 @@ function OverviewChart(data) {
     this.timeout = null;
 }
 
-OverviewChart.prototype.initData = function (selectedTagId) {
+OverviewChart.prototype.initData = function (data, selectedTagId) {
     var self = this;
+    this.data = data;
 
     var tagLogsArray = this.data.map(function (tag) {
         return (tag.tagLogs);
@@ -184,7 +188,7 @@ OverviewChart.prototype.initChart = function () {
         });
 
     //initialize svg with temperature readings
-    this.container = d3.select('#chart').style('position', 'relative');
+    this.container = d3.select(this.element).style('position', 'relative');
     this.svg = this.container.append('svg');
     this.chart = this.svg.append('g');
     this.area = this.chart.append('g').attr('clip-path', 'url(#plotAreaClip)');
@@ -245,7 +249,7 @@ OverviewChart.prototype.initChart = function () {
         .attr("class", "locator")
         .style("pointer-events", "none");
 
-    this.navSvg = d3.select('#chart').append('svg')
+    this.navSvg = this.container.append('svg')
         .classed('navigator', true);
 
     this.navChart = this.navSvg.append('g');
@@ -260,18 +264,18 @@ OverviewChart.prototype.initChart = function () {
 
     this.viewport = d3.svg.brush()
         .x(this.navX)
-        .on("brush", function () { self._focus(); });
+        .on("brush", function () {
+            self._focus();
+        });
 
     this.navViewport = this.navChart.append("g")
         .attr("class", "viewport");
 };
 
 OverviewChart.prototype.render = function (event) {
-    //capture this
     var self = this;
     //get dimensions based on window size
     var newWidth = $('#chart').width();
-
     this._updateDimensions(newWidth);
 
     //update x and y scales to new dimensions
@@ -288,11 +292,20 @@ OverviewChart.prototype.render = function (event) {
         .attr('height', this.height + this.margin.top + this.margin.bottom);
     this.chart.attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
     this.target.attr({width: this.width, height: this.height});
-    this.clip.attr('transform', 'translate(' + 0 + ',' + -5 + ')').attr({width: this.width + 5, height: this.height + 10});
+    this.clip.attr('transform', 'translate(' + 0 + ',' + -5 + ')').attr({
+        width: this.width + 5,
+        height: this.height + 10
+    });
 
-    this.target.on("mouseout", function () { self._hideTooltip(); })
-        .on("mousemove", function () { self._moveLocator(); })
-        .on("mouseover", function () { self._showTooltip(); });
+    this.target.on("mouseout", function () {
+        self._hideTooltip();
+    })
+        .on("mousemove", function () {
+            self._moveLocator();
+        })
+        .on("mouseover", function () {
+            self._showTooltip();
+        });
 
     this.navSvg.attr('width', this.navWidth + this.margin.left + this.margin.right)
         .attr('height', this.navHeight + this.margin.top + this.margin.bottom);
@@ -371,36 +384,36 @@ OverviewChart.prototype.render = function (event) {
 
 OverviewChart.prototype.renderData = function (dataType) {
     if (dataType === CHART_TYPE.TEMPERATURE) {
-        // update tagPaths
+        //update tagPaths
         this.tagPaths.data(this.tagTemperatureReadings);
         this.navTagPaths.data(this.tagTemperatureReadings);
-        // update yScale
+        //update yScale
         this.y = this.yTemperature;
         this.navY = this.navYTemperature;
         this.selectedType = CHART_TYPE.TEMPERATURE;
     } else if (dataType === CHART_TYPE.RELATIVE_HUMIDITY) {
-        // update tagPaths
+        //update tagPaths
         this.tagPaths.data(this.tagRelativeHumidityReadings);
         this.navTagPaths.data(this.tagRelativeHumidityReadings);
-        // update yScale
+        //update yScale
         this.y = this.yRelativeHumidity;
         this.navY = this.navYRelativeHumidity;
         this.selectedType = CHART_TYPE.RELATIVE_HUMIDITY;
     } else if (dataType === CHART_TYPE.DEW_POINT) {
-        // update tagPaths
+        //update tagPaths
         this.tagPaths.data(this.tagDewPointReadings);
         this.navTagPaths.data(this.tagDewPointReadings);
         //update difference
         this.differenceContainer.data(this.selectedTagData.DEW_POINT);
-        // update yScale
+        //update yScale
         this.y = this.yDewPoint;
         this.navY = this.navYDewPoint;
         this.selectedType = CHART_TYPE.DEW_POINT;
     } else if (dataType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
-        // update tagPaths
+        //update tagPaths
         this.tagPaths.data(this.tagEquilibriumMoistureContentReadings);
         this.navTagPaths.data(this.tagEquilibriumMoistureContentReadings);
-        // update yScale
+        //update yScale
         this.y = this.yEquilibriumMoistureContent;
         this.navY = this.navYEquilibriumMoistureContent;
         this.selectedType = CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT;
@@ -465,7 +478,9 @@ OverviewChart.prototype._focus = function () {
 
 OverviewChart.prototype._debounceRender = function () {
     var self = this;
-    this._debounce(function () { self.render(); }, 150);
+    this._debounce(function () {
+        self.render();
+    }, 150);
 };
 
 OverviewChart.prototype._debounce = function (fn, waitPeriod) {
@@ -474,9 +489,9 @@ OverviewChart.prototype._debounce = function (fn, waitPeriod) {
 };
 
 OverviewChart.prototype._moveLocator = function () {
-    // Coords of mousemove event relative to the container div
+    //coords of mouse move event relative to the container div
     var coords = d3.mouse(this.area.node());
-    // Value on the x scale corresponding to this location
+    //value on the x scale corresponding to this location
     var xVal = this.x.invert(coords[0]);
     var index = Math.floor(this.touchScale(xVal));
     var reading = this._getClosestReading(xVal, index);
@@ -487,21 +502,20 @@ OverviewChart.prototype._moveLocator = function () {
         cy: this.y(reading.y)
     });
 
-    // Update tooltip content
+    //update tooltip content
     var date = this.timeFormat.parse(reading.date);
     this.tooltipKey.html(this.niceTimeFormat(date));
     this.tooltipValue.html(reading.y + this.selectedType.suffix);
 
-    // Get dimensions of tooltip element
+    //get dimensions of tooltip element
     var dim = this.tooltip.node().getBoundingClientRect();
 
-    // Update the position of the tooltip. By default, above and to the right
-    // of the mouse cursor.
-    var tooltipTop = this.y(reading.y), //coords[1] + dim.height - 5,
+    //update the position of the tooltip. By default, above and to the right of the mouse cursor.
+    var tooltipTop = this.y(reading.y), //TODO follow mouse? coords[1] + dim.height - 5,
         tooltipLeft = coords[0] + (dim.width / 2);
 
-    // If right edge of tooltip goes beyond chart container, force it to move
-    // to the left of the mouse cursor.
+    //if right edge of tooltip goes beyond chart container, force it to move
+    //to the left of the mouse cursor.
     if (tooltipLeft + (dim.width / 2) > this.width) {
         tooltipLeft = coords[0] - (dim.width / 2);
     }
@@ -511,7 +525,7 @@ OverviewChart.prototype._moveLocator = function () {
         left: tooltipLeft + 'px'
     });
 
-    // Show tooltip if it is not already visible
+    //show tooltip if it is not already visible
     if (this.tooltip.style('visibility') != 'visible') {
         this._showTooltip();
     }
