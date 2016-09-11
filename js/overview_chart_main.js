@@ -6,7 +6,7 @@ chart.initChart();
 //render the chart
 chart.render("init");
 
-window.addEventListener('resize', chart.render);
+window.addEventListener('resize', function() { chart.render("change") });
 
 $( "#temperature" ).click(function() {
     chart.renderData(CHART_TYPE.TEMPERATURE);
