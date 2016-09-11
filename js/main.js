@@ -1,19 +1,4 @@
-var firstSelectedTagId = "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d"
-
-var CHART_TYPE = {
-  TEMPERATURE: {
-    suffix: "°C"
-  },
-  RELATIVE_HUMIDITY: {
-    suffix: "%"
-  },
-  DEW_POINT: {
-    suffix: "°C"
-  },
-  EQUILIBRIUM_MOISTURE_CONTENT: {
-    suffix: "°C"
-  },
-};
+var firstSelectedTagId = "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d";
 
 var Chart = (function(window, d3, tagData, selectedTagId, self) {
   var data = tagData;
@@ -83,15 +68,15 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     });
 
     //initialize scales
-    var xExtent = d3.extent(tagLogsArray, function(d,i) { return timeFormat.parse(d.readingAt) });
+    var xExtent = d3.extent(tagLogsArray, function(d) { return timeFormat.parse(d.readingAt) });
     x = d3.time.scale().domain(xExtent);
     navX = d3.time.scale().domain(xExtent);
     touchScale = d3.time.scale().domain(xExtent);
 
-    var yTemperatureExtent = d3.extent(tagLogsArray, function(d,i) { return d.temperature });
-    var yRelativeHumidityExtent = d3.extent(tagLogsArray, function(d,i) { return d.relativeHumidity });
-    var yDewPointExtent = d3.extent(tagLogsArray, function(d,i) { return d.dewPoint });
-    var yEquilibriumMoistureContentExtent = d3.extent(tagLogsArray, function(d,i) { return d.equilibriumMoistureContent });
+    var yTemperatureExtent = d3.extent(tagLogsArray, function(d) { return d.temperature });
+    var yRelativeHumidityExtent = d3.extent(tagLogsArray, function(d) { return d.relativeHumidity });
+    var yDewPointExtent = d3.extent(tagLogsArray, function(d) { return d.dewPoint });
+    var yEquilibriumMoistureContentExtent = d3.extent(tagLogsArray, function(d) { return d.equilibriumMoistureContent });
 
     var yTemperatureAndDewPointExtent = [
       Math.min(yTemperatureExtent[0], yDewPointExtent[0]),
@@ -123,20 +108,20 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     //the path generator for the line chart
     line = d3.svg.line()
-      .x(function(d) { return x(timeFormat.parse(d.date)) })
-      .y(function(d) { return y(d.y) });
+    .x(function(d) { return x(timeFormat.parse(d.date)) })
+    .y(function(d) { return y(d.y) });
 
     navLine = d3.svg.line()
-      .x(function (d) { return navX(timeFormat.parse(d.date)) })
-      .y(function (d) { return navY(d.y) });
+    .x(function (d) { return navX(timeFormat.parse(d.date)) })
+    .y(function (d) { return navY(d.y) });
 
     difference = d3.svg.area()
-      .x(function(d) { return x(timeFormat.parse(d.date)) })
-      .y1(function(d) { return y(d.y) });
+    .x(function(d) { return x(timeFormat.parse(d.date)) })
+    .y1(function(d) { return y(d.y) });
 
     differenceLine = d3.svg.line()
-      .x(function(d) { return x(timeFormat.parse(d.date)) })
-      .y(function(d) { return y(d.dewPoint) });
+    .x(function(d) { return x(timeFormat.parse(d.date)) })
+    .y(function(d) { return y(d.dewPoint) });
 
     //initialize svg with temperature readings
     container = d3.select('#chart').style('position', 'relative');
@@ -144,83 +129,83 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     chart = svg.append('g');
     area = chart.append('g').attr('clip-path', 'url(#plotAreaClip)');
     clip = area.append('clipPath')
-        .attr('id', 'plotAreaClip')
-        .append('rect');
+    .attr('id', 'plotAreaClip')
+    .append('rect');
 
     chart.append('g').classed('x axis', true).style("pointer-events", "none");
     chart.append('g').classed('y axis', true).style("pointer-events", "none");
 
     tooltip = container.append('div')
-      .attr("class", "tooltip");
+    .attr("class", "tooltip");
 
     tooltipKey = tooltip.append('div')
-      .attr("class", "key");
+    .attr("class", "key");
 
     tooltipValue = tooltip.append('div')
-      .attr("class", "value");
+    .attr("class", "value");
 
     tagPaths = area.selectAll(".tag")
-        .data(tagTemperatureReadings)
-        .enter().append("g")
-        .attr("class", "tag")
-        .append("path")
-        .attr("class", "line")
-        .style("pointer-events", "none");
+    .data(tagTemperatureReadings)
+    .enter().append("g")
+    .attr("class", "tag")
+    .append("path")
+    .attr("class", "line")
+    .style("pointer-events", "none");
 
     differenceContainer = area.selectAll(".difference-container")
-      .data([selectedTagData.DEW_POINT])
-      .enter().append("g")
-      .attr("class", "difference-container");
+    .data([selectedTagData.DEW_POINT])
+    .enter().append("g")
+    .attr("class", "difference-container");
 
     clipBelow = differenceContainer.append("clipPath")
-      .attr("id", "clip-below")
-      .append("path");
+    .attr("id", "clip-below")
+    .append("path");
 
     clipAbove = differenceContainer.append("clipPath")
-      .attr("id", "clip-above")
-      .append("path");
+    .attr("id", "clip-above")
+    .append("path");
 
     differenceAbove = differenceContainer.append("path")
-      .attr("class", "difference above")
-      .attr("clip-path", "url(#clip-above)")
-      .style("pointer-events", "none");
+    .attr("class", "difference above")
+    .attr("clip-path", "url(#clip-above)")
+    .style("pointer-events", "none");
 
     differenceBelow = differenceContainer.append("path")
-      .attr("class", "difference below")
-      .attr("clip-path", "url(#clip-below)")
-      .style("pointer-events", "none");
+    .attr("class", "difference below")
+    .attr("clip-path", "url(#clip-below)")
+    .style("pointer-events", "none");
 
     target = area.append('rect')
-      .style("fill", "none")
-      .style("pointer-events", "all");
+    .style("fill", "none")
+    .style("pointer-events", "all");
 
     locator = area.append('circle')
-      .style('opacity', 0.0)
-      .attr('r', 3)
-      .attr("class", "locator")
-      .style("pointer-events", "none");
+    .style('opacity', 0.0)
+    .attr('r', 3)
+    .attr("class", "locator")
+    .style("pointer-events", "none");
 
     navSvg = d3.select('#chart').append('svg')
-      .classed('navigator', true);
+    .classed('navigator', true);
     navChart = navSvg.append('g');
     navChart.append('g').classed('x axis', true);
 
     navTagPaths = navChart.selectAll(".tag")
-      .data(tagTemperatureReadings)
-      .enter().append("g")
-      .attr("class", "tag")
-      .append("path")
-      .attr("class", "line");
+    .data(tagTemperatureReadings)
+    .enter().append("g")
+    .attr("class", "tag")
+    .append("path")
+    .attr("class", "line");
 
     viewport = d3.svg.brush()
-      .x(navX)
-      .on("brush", function () {
-        x.domain(viewport.empty() ? navX.domain() : viewport.extent());
-        debounceRender();
-      });
+    .x(navX)
+    .on("brush", function () {
+      x.domain(viewport.empty() ? navX.domain() : viewport.extent());
+      debounceRender();
+    });
 
     navViewport = navChart.append("g")
-      .attr("class", "viewport");
+    .attr("class", "viewport");
   }
 
   function render(event) {
@@ -239,17 +224,17 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
     //update svg elements to new dimensions
     svg.attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom);
+    .attr('height', height + margin.top + margin.bottom);
     chart.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
     target.attr({ width: width, height: height });
     clip.attr('transform', 'translate(' + 0 + ',' + -5 + ')').attr({ width: width+5, height: height+10 });
 
     target.on("mouseout", function() { hideTooltip(); })
-      .on("mousemove", moveLocator)
-      .on("mouseover", function() { showTooltip(); });
+    .on("mousemove", moveLocator)
+    .on("mouseover", function() { showTooltip(); });
 
     navSvg.attr('width', navWidth + margin.left + margin.right)
-      .attr('height', navHeight + margin.top + margin.bottom);
+    .attr('height', navHeight + margin.top + margin.bottom);
     navChart.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
     navViewport.call(viewport).selectAll("rect").attr("height", navHeight);
 
@@ -280,12 +265,12 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     navXAxis.scale(navX);
 
     xAxisElement.attr('transform', 'translate(0,' + height + ')')
-      .call(xAxis);
+    .call(xAxis);
 
     yAxisElement.call(yAxis);
 
     navXAxisElement.attr('transform', 'translate(0,' + navHeight + ')')
-      .call(navXAxis);
+    .call(navXAxis);
 
     if(selectedType == CHART_TYPE.DEW_POINT){
       if(event == null){
@@ -306,9 +291,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     }
 
     localTagPaths.attr("d", function(d) { return line(d.values); })
-      .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
+    .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
     localNavTagPaths.attr("d", function(d) { return navLine(d.values); })
-      .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
+    .attr("class", function(d) { return d.id === selectedTagId ? "line active" : "line"; });
   }
 
   function updateDimensions(newWidth) {
@@ -411,10 +396,10 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   function moveLocator() {
     // Coords of mousemove event relative to the container div
-  	var coords = d3.mouse(area.node());
+    var coords = d3.mouse(area.node());
 
-  	// Value on the x scale corresponding to this location
-  	var xVal = x.invert(coords[0]);
+    // Value on the x scale corresponding to this location
+    var xVal = x.invert(coords[0]);
     var index = Math.floor(touchScale(xVal));
 
     var reading = getClosestReading(xVal, index);
@@ -425,29 +410,29 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
     });
 
     // Update tooltip content
-  	setTooltip(reading);
+    setTooltip(reading);
 
-  	// Get dimensions of tooltip element
-  	var dim = tooltip.node().getBoundingClientRect();
+    // Get dimensions of tooltip element
+    var dim = tooltip.node().getBoundingClientRect();
 
-  	// Update the position of the tooltip. By default, above and to the right
-  	// of the mouse cursor.
-  	var tooltip_top = y(reading.y), //coords[1] + dim.height - 5,
-  	    tooltip_left = coords[0] + (dim.width / 2);
+    // Update the position of the tooltip. By default, above and to the right
+    // of the mouse cursor.
+    var tooltip_top = y(reading.y), //coords[1] + dim.height - 5,
+    tooltip_left = coords[0] + (dim.width / 2);
 
-  	// If right edge of tooltip goes beyond chart container, force it to move
-  	// to the left of the mouse cursor.
-  	if (tooltip_left + (dim.width/2) > width){
-  		tooltip_left = coords[0] - (dim.width / 2);
+    // If right edge of tooltip goes beyond chart container, force it to move
+    // to the left of the mouse cursor.
+    if (tooltip_left + (dim.width/2) > width){
+      tooltip_left = coords[0] - (dim.width / 2);
     }
 
-  	tooltip.style({
-  		top: tooltip_top + 'px',
-  		left: tooltip_left + 'px'
-  	});
+    tooltip.style({
+      top: tooltip_top + 'px',
+      left: tooltip_left + 'px'
+    });
 
-  	// Show tooltip if it is not already visible
-  	if (tooltip.style('visibility') != 'visible'){
+    // Show tooltip if it is not already visible
+    if (tooltip.style('visibility') != 'visible'){
       showTooltip();
     }
   }
@@ -463,9 +448,9 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       var currentDifference = date - timeFormat.parse(currentReading.date);
 
       if(currentDifference < 0 && currentDifference > bestDifference){
-          index -= 1;
-          bestDifference = currentDifference;
-          reading = currentReading;
+        index -= 1;
+        bestDifference = currentDifference;
+        reading = currentReading;
       } else {
         gettingCloser = false;
         if(reading == null){
@@ -479,14 +464,14 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
 
   // Function for hiding the tooltip
   function hideTooltip() {
-  	tooltip.style('visibility', 'hidden');
-  	locator.transition().duration(500).style('opacity', 0.0);
+    tooltip.style('visibility', 'hidden');
+    locator.transition().duration(500).style('opacity', 0.0);
   }
 
   // Function for showing the tooltip
   function showTooltip() {
-  	tooltip.style('visibility', 'visible');
-  	locator.transition().duration(1000).style('display', 'block').style('opacity', 1);
+    tooltip.style('visibility', 'visible');
+    locator.transition().duration(1000).style('display', 'block').style('opacity', 1);
   }
 
   function setTooltip(reading) {
