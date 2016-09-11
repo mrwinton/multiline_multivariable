@@ -505,7 +505,11 @@ BuildingOverviewChart.prototype._moveLocator = function () {
     //update tooltip content
     var date = this.timeFormat.parse(reading.date);
     this.tooltipKey.html(this.niceTimeFormat(date));
-    this.tooltipValue.html(reading.y + this.selectedType.suffix);
+    if (this.selectedType == CHART_TYPE.DEW_POINT) {
+      this.tooltipValue.html((Math.round ((reading.y - reading.dewPoint) * 10) / 10)  + this.selectedType.suffix + " difference");
+    } else {
+      this.tooltipValue.html(reading.y + this.selectedType.suffix);
+    }
 
     //get dimensions of tooltip element
     var dim = this.tooltip.node().getBoundingClientRect();
