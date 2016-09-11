@@ -242,7 +242,7 @@ var Chart = (function(window, d3, tagData, selectedTagId, self) {
       .attr('height', height + margin.top + margin.bottom);
     chart.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
     target.attr({ width: width, height: height });
-    clip.attr({ width: width, height: height });
+    clip.attr('transform', 'translate(' + 0 + ',' + -5 + ')').attr({ width: width+5, height: height+10 });
 
     target.on("mouseout", function() { hideTooltip(); })
       .on("mousemove", moveLocator)
