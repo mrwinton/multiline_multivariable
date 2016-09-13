@@ -303,7 +303,7 @@ BuildingOverviewChart.prototype.render = function (event) {
         .on("mousemove", function () {
             self._moveLocator();
         })
-        .on("mouseover", function () {
+        .on("mouseenter", function () {
             self._showTooltip();
         });
 
@@ -523,15 +523,10 @@ BuildingOverviewChart.prototype._moveLocator = function () {
         tooltipLeft = coords[0] - (dim.width / 2);
     }
 
-    this.tooltip.style({
+    this.tooltip.transition().duration(120).style({
         top: tooltipTop + 'px',
         left: tooltipLeft + 'px'
     });
-
-    //show tooltip if it is not already visible
-    if (this.tooltip.style('visibility') != 'visible') {
-        this._showTooltip();
-    }
 };
 
 BuildingOverviewChart.prototype._getClosestReading = function (date, index) {
@@ -559,11 +554,11 @@ BuildingOverviewChart.prototype._getClosestReading = function (date, index) {
 };
 
 BuildingOverviewChart.prototype._hideTooltip = function () {
-    this.tooltip.style('visibility', 'hidden');
+    this.tooltip.transition().duration(500).style('opacity', 0.0).attr('class', 'reading-tooltip');
     this.locator.transition().duration(500).style('opacity', 0.0);
 };
 
 BuildingOverviewChart.prototype._showTooltip = function () {
-    this.tooltip.style('visibility', 'visible');
+    this.tooltip.attr('class', 'reading-tooltip tooltipAnimated tooltipFadeIn');
     this.locator.transition().duration(1000).style('display', 'block').style('opacity', 1);
 };

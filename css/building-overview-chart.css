@@ -90,3 +90,27 @@ text{
 .reading-tooltip .value{
   color: #91B8E7;
 }
+
+.tooltipAnimated {
+  -webkit-animation-duration: 0.8s;
+  animation-duration: 0.8s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+@-webkit-keyframes tooltipFadeIn {
+  0%   {opacity: 0;}
+  50%  {opacity: 0;}
+  100% {opacity: 1;}
+}
+
+@keyframes tooltipFadeIn {
+  0%   {opacity: 0;}
+  50%  {opacity: 0;}
+  100% {opacity: 1;}
+}
+
+.tooltipFadeIn {
+  -webkit-animation-name: tooltipFadeIn;
+  animation-name: tooltipFadeIn;
+}
