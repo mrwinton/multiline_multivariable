@@ -200,7 +200,7 @@ BuildingOverviewChart.prototype.initChart = function () {
     this.chart.append('g').classed('y axis', true).style("pointer-events", "none");
 
     this.tooltip = this.container.append('div')
-        .attr("class", "tooltip");
+        .attr("class", "reading-tooltip");
 
     this.tooltipKey = this.tooltip.append('div')
         .attr("class", "key");
