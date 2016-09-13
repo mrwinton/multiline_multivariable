@@ -275,7 +275,7 @@ BuildingOverviewChart.prototype.initChart = function () {
 BuildingOverviewChart.prototype.render = function (event) {
     var self = this;
     //get dimensions based on window size
-    var newWidth = $('#chart').width();
+    var newWidth = $(this.element).width();
     this._updateDimensions(newWidth);
 
     //update x and y scales to new dimensions
