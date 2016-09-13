@@ -76,8 +76,9 @@ text{
 .reading-tooltip{
   position: absolute;
   pointer-events: none;
-  width: 130px;
+  width: 140px;
   font-weight: bold;
+  font-size: 1.3em;
   z-index: 1000;
   font-family: 'Lato', Arial, sans-serif;
   text-shadow: -1px -1px 0 #f8f3f3, 1px -1px 0 #f8f3f3, -1px 1px 0 #f8f3f3, 1px 1px 0 #f8f3f3;
