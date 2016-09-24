@@ -9,6 +9,6 @@ var CHART_TYPE = {
         suffix: "°C"
     },
     EQUILIBRIUM_MOISTURE_CONTENT: {
-        suffix: "°C"
+        suffix: "%"
     }
 };
