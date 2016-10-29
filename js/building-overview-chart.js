@@ -113,7 +113,7 @@ BuildingOverviewChart.prototype.initData = function (data, selectedTagId) {
 
     //initialize scales
     var xExtent = d3.extent(tagLogsArray, function (d) {
-        return self.timeFormat.parse(d.readingAt)
+      return self.timeFormat.parse(d.readingAt);
     });
     this.x = d3.time.scale().domain(xExtent);
     this.navX = d3.time.scale().domain(xExtent);

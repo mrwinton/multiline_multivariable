@@ -1,4 +1,4 @@
-var tags = [
+var data = [
   {
     "id": "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d",
     "name": "Tag 0",

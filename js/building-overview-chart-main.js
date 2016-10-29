@@ -1,6 +1,12 @@
+var tags = data.map(function (tagData) {
+    return new CreateTag(tagData).call();
+});
+
+var firstTag = _.first(tags);
+
 var chart = new BuildingOverviewChart('#chart');
 
-chart.initData(tags, "fed5f4b7-0f2e-4b24-b236-a04b9fa0c35d");
+chart.initData(tags, firstTag.id);
 //initialize chart
 chart.initChart();
 //render the chart
