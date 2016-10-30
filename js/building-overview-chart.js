@@ -278,27 +278,29 @@ BuildingOverviewChart.prototype.render = function (event) {
   this.touchScale.range([0, this.selectedTagReadings.length - 1]).clamp(true);
 
   //update svg elements to new dimensions
-  this.svg.attr('width', this.width + this.margin.left + this.margin.right)
-    .attr('height', this.height + this.margin.top + this.margin.bottom);
+  this.svg.attr({
+    width: this.width + this.margin.left + this.margin.right,
+    height: this.height + this.margin.top + this.margin.bottom
+  });
   this.chart.attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
-  this.target.attr({width: this.width, height: this.height});
-  this.clip.attr('transform', 'translate(' + 0 + ',' + -5 + ')').attr({
+  this.target.attr({
+    width: this.width,
+    height: this.height
+  });
+  this.clip.attr({
+    transform: 'translate(' + 0 + ',' + -5 + ')',
     width: this.width + 5,
     height: this.height + 10
   });
 
-  this.target.on("mouseout", function () {
-    self._hideTooltip();
-  })
-    .on("mousemove", function () {
-      self._moveLocator();
-    })
-    .on("mouseenter", function () {
-      self._showTooltip();
-    });
+  this.target.on("mouseout", function () { self._hideTooltip(); })
+    .on("mousemove", function () { self._moveLocator(); })
+    .on("mouseenter", function () { self._showTooltip(); });
 
-  this.navSvg.attr('width', this.navWidth + this.margin.left + this.margin.right)
-    .attr('height', this.navHeight + this.margin.top + this.margin.bottom);
+  this.navSvg.attr({
+    width: this.navWidth + this.margin.left + this.margin.right,
+    height: this.navHeight + this.margin.top + this.margin.bottom
+  });
   this.navChart.attr('transform', 'translate(' + this.margin.left + ',' + this.margin.top + ')');
   this.navViewport.call(this.viewport).selectAll("rect").attr("height", this.navHeight);
 
