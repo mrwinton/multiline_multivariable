@@ -154,7 +154,11 @@ BuildingOverviewChart.prototype.initChart = function (chartType) {
       return self.x(d.dateTime);
     })
     .y(function (d) {
-      return self.y[self.selectedY](d[self.selectedY]);
+      if(self.selectedType === CHART_TYPE.DEW_POINT){
+        return self.y[self.selectedY](d.temperature);
+      } else {
+        return self.y[self.selectedY](d[self.selectedY]);
+      }
     });
 
   this.navLine = d3.svg.line()
@@ -170,7 +174,7 @@ BuildingOverviewChart.prototype.initChart = function (chartType) {
       return self.x(d.dateTime);
     })
     .y(function (d) {
-      return self.y[self.selectedY](d[self.selectedY]);
+      return self.y[self.selectedY](d.temperature);
     });
 
   //initialize svg with temperature readings
@@ -420,26 +424,35 @@ BuildingOverviewChart.prototype._moveLocator = function () {
   var index = Math.floor(this.touchScale(xVal));
   var reading = this._getClosestReading(xVal, index);
 
+  var tooltipText = null;
+  var locatorY = null;
+  var tooltipTop = null;
+
+  if (this.selectedType === CHART_TYPE.DEW_POINT) {
+    tooltipText = (Math.round ((reading.temperature - reading.dewPoint) * 10) / 10)  + this.selectedType.suffix + " difference";
+    locatorY = this.y[this.selectedY](reading.temperature);
+    tooltipTop = this.y[this.selectedY](reading.temperature);
+  } else {
+    tooltipText = reading[this.selectedY] + this.selectedType.suffix;
+    locatorY = this.y[this.selectedY](reading[this.selectedY]);
+    tooltipTop = this.y[this.selectedY](reading[this.selectedY]);
+  }
+
   //update locator coords
   this.locator.attr({
     cx: this.x(reading.dateTime),
-    cy: this.y[this.selectedY](reading[this.selectedY])
+    cy: locatorY
   });
 
   //update tooltip content
   this.tooltipKey.html(reading.niceDateTime);
-  if (this.selectedType == CHART_TYPE.DEW_POINT) {
-    this.tooltipValue.html((Math.round ((reading[this.selectedY] - reading.dewPoint) * 10) / 10)  + this.selectedType.suffix + " difference");
-  } else {
-    this.tooltipValue.html(reading[this.selectedY] + this.selectedType.suffix);
-  }
+  this.tooltipValue.html(tooltipText);
 
   //get dimensions of tooltip element
   var dim = this.tooltip.node().getBoundingClientRect();
 
   //update the position of the tooltip
-  var tooltipTop = this.y[this.selectedY](reading[this.selectedY]), //TODO follow mouse? coords[1] + dim.height - 5,
-  tooltipLeft = coords[0] + (dim.width / 2);
+  var tooltipLeft = coords[0] + (dim.width / 2);
 
   //if right edge of tooltip goes beyond chart container, force it to move to the left of the mouse cursor
   if (tooltipLeft + (dim.width / 2) > this.width) {
