@@ -4,16 +4,18 @@ function BuildingOverviewChart(element) {
 
   //data
   this.data = null;
-  this.tagTemperatureReadings = [];
-  this.tagRelativeHumidityReadings = [];
-  this.tagDewPointReadings = [];
-  this.tagEquilibriumMoistureContentReadings = [];
+  this.tags = [];
 
   //base graph
   this.container = null;
   this.svg = null;
   this.x = null;
-  this.y = null;
+  this.y = {
+    temperature: null,
+    relativeHumidity: null,
+    dewPoint: null,
+    equilibriumMoistureContent: null
+  };
   this.xAxis = null;
   this.yAxis = null;
   this.chart = null;
@@ -24,10 +26,6 @@ function BuildingOverviewChart(element) {
   this.margin = {};
   this.width = null;
   this.height = null;
-  this.yTemperature = null;
-  this.yRelativeHumidity = null;
-  this.yDewPoint = null;
-  this.yEquilibriumMoistureContent = null;
 
   //viewport graph
   this.viewport = null;
@@ -35,17 +33,18 @@ function BuildingOverviewChart(element) {
   this.navHeight = null;
   this.navChart = null;
   this.navX = null;
-  this.navY = null;
+  this.navY = {
+    temperature: null,
+    relativeHumidity: null,
+    dewPoint: null,
+    equilibriumMoistureContent: null
+  };
   this.navXAxis = null;
   this.navLine = null;
   this.navSvg = null;
   this.navChart = null;
   this.navTagPaths = null;
   this.navViewport = null;
-  this.navYTemperature = null;
-  this.navYRelativeHumidity = null;
-  this.navYDewPoint = null;
-  this.navYEquilibriumMoistureContent = null;
 
   //difference chart
   this.difference = null;
@@ -64,18 +63,15 @@ function BuildingOverviewChart(element) {
   this.touchScale = null;
 
   //time formats
-  this.timeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
-  this.niceTimeFormat = d3.time.format('%a %e, %b %_I:%M%p');
+  this.dateTimeFormat = d3.time.format('%Y-%m-%d %H:%M:%S');
+  this.niceDateTimeFormat = d3.time.format('%a %e, %b %_I:%M%p');
 
   //selected fields
   this.selectedType = null;
   this.selectedTagId = null;
-  this.selectedTagData = {
-    TEMPERATURE: [],
-    RELATIVE_HUMIDITY: [],
-    DEW_POINT: [],
-    EQUILIBRIUM_MOISTURE_CONTENT: []
-  };
+  this.selectedTagReadings = [];
+  this.selectedY = null;
+  this.selectedNavY = null;
 
   //misc
   this.breakPoint = 320;
@@ -83,108 +79,98 @@ function BuildingOverviewChart(element) {
 }
 
 BuildingOverviewChart.prototype.initData = function (data, selectedTagId) {
-  var self = this;
   this.data = data;
-
-  var tagLogsArray = this.data.map(function (tag) {
-    return (tag.tagLogs);
-  }).reduce(function (a, b) {
-    return a.concat(b);
-  });
+  var self = this;
 
   this.data.forEach(function (tag) {
-    var temperatureValues = [];
-    var relativeHumidityValues = [];
-    var dewPointValues = [];
-    var tagEquilibriumMoistureContentValues = [];
+    var readings = tag.tagLogs.map(function (tagLog) {
+      var readingDateTime = self.dateTimeFormat.parse(tagLog.readingAt);
 
-    tag.tagLogs.forEach(function (tagLog) {
-      temperatureValues.push({date: tagLog.readingAt, y: tagLog.temperature});
-      relativeHumidityValues.push({date: tagLog.readingAt, y: tagLog.relativeHumidity});
-      dewPointValues.push({date: tagLog.readingAt, y: tagLog.temperature, dewPoint: tagLog.dewPoint});
-      tagEquilibriumMoistureContentValues.push({date: tagLog.readingAt, y: tagLog.equilibriumMoistureContent});
+      return  {
+        dateTime: readingDateTime,
+        niceDateTime: self.niceDateTimeFormat(readingDateTime),
+        temperature: tagLog.temperature,
+        relativeHumidity: tagLog.relativeHumidity,
+        dewPoint: tagLog.dewPoint,
+        equilibriumMoistureContent: tagLog.equilibriumMoistureContent
+      };
     });
 
-    self.tagTemperatureReadings.push({id: tag.id, values: temperatureValues});
-    self.tagRelativeHumidityReadings.push({id: tag.id, values: relativeHumidityValues});
-    self.tagDewPointReadings.push({id: tag.id, values: dewPointValues});
-    self.tagEquilibriumMoistureContentReadings.push({id: tag.id, values: tagEquilibriumMoistureContentValues});
+    self.tags.push({id: tag.id, readings: readings});
   });
+
+  var extentKeys = ["dateTime", "temperature", "relativeHumidity", "dewPoint", "equilibriumMoistureContent"];
+  var extents = D3TagHelper.getExtents(this.tags, extentKeys);
+
+  var temperatureAndDewPointExtent = d3.extent(extents["temperature"].concat(extents["dewPoint"]));
 
   //initialize scales
-  var xExtent = d3.extent(tagLogsArray, function (d) {
-    return self.timeFormat.parse(d.readingAt);
-  });
-  this.x = d3.time.scale().domain(xExtent);
-  this.navX = d3.time.scale().domain(xExtent);
-  this.touchScale = d3.time.scale().domain(xExtent);
+  this.x = d3.time.scale().domain(extents["dateTime"]);
+  this.navX = d3.time.scale().domain(extents["dateTime"]);
+  this.touchScale = d3.time.scale().domain(extents["dateTime"]);
 
-  var yTemperatureExtent = d3.extent(tagLogsArray, function (d) {
-    return d.temperature;
-  });
-  var yRelativeHumidityExtent = d3.extent(tagLogsArray, function (d) {
-    return d.relativeHumidity;
-  });
-  var yDewPointExtent = d3.extent(tagLogsArray, function (d) {
-    return d.dewPoint;
-  });
-  var yEquilibriumMoistureContentExtent = d3.extent(tagLogsArray, function (d) {
-    return d.equilibriumMoistureContent;
-  });
+  this.y.temperature = d3.scale.linear().domain(extents["temperature"]);
+  this.y.relativeHumidity = d3.scale.linear().domain(extents["relativeHumidity"]);
+  this.y.dewPoint = d3.scale.linear().domain(temperatureAndDewPointExtent);
+  this.y.equilibriumMoistureContent = d3.scale.linear().domain(extents["equilibriumMoistureContent"]);
 
-  var yTemperatureAndDewPointExtent = [
-    Math.min(yTemperatureExtent[0], yDewPointExtent[0]),
-    Math.max(yTemperatureExtent[1], yDewPointExtent[1])
-  ];
-
-  this.yTemperature = d3.scale.linear().domain(yTemperatureExtent);
-  this.yRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
-  this.yDewPoint = d3.scale.linear().domain(yTemperatureAndDewPointExtent);
-  this.yEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
-
-  this.navYTemperature = d3.scale.linear().domain(yTemperatureExtent);
-  this.navYRelativeHumidity = d3.scale.linear().domain(yRelativeHumidityExtent);
-  this.navYDewPoint = d3.scale.linear().domain(yTemperatureAndDewPointExtent);
-  this.navYEquilibriumMoistureContent = d3.scale.linear().domain(yEquilibriumMoistureContentExtent);
+  this.navY.temperature = d3.scale.linear().domain(extents["temperature"]);
+  this.navY.relativeHumidity = d3.scale.linear().domain(extents["relativeHumidity"]);
+  this.navY.dewPoint = d3.scale.linear().domain(temperatureAndDewPointExtent);
+  this.navY.equilibriumMoistureContent = d3.scale.linear().domain(extents["equilibriumMoistureContent"]);
 
   this._selectTag(selectedTagId);
 };
 
-BuildingOverviewChart.prototype.initChart = function () {
+BuildingOverviewChart.prototype._updateSelectedChartType = function(chartType) {
+  if (chartType === CHART_TYPE.TEMPERATURE) {
+    this.selectedY = "temperature";
+  } else if (chartType === CHART_TYPE.RELATIVE_HUMIDITY) {
+    this.selectedY = "relativeHumidity";
+  } else if (chartType === CHART_TYPE.DEW_POINT) {
+    this.selectedY = "dewPoint";
+  } else if (chartType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
+    this.selectedY = "equilibriumMoistureContent";
+  } else {
+    console.log(chartType + " not recognised.");
+    return;
+  }
+
+  this.selectedType = chartType;
+};
+
+BuildingOverviewChart.prototype.initChart = function (chartType) {
   var self = this;
+  this._updateSelectedChartType(chartType);
+
   //initialize axis
   this.xAxis = d3.svg.axis().orient('bottom');
   this.yAxis = d3.svg.axis().orient('left');
   this.navXAxis = d3.svg.axis().orient('bottom');
 
-  //initialize y scale as temperature
-  this.y = this.yTemperature;
-  this.navY = this.navYTemperature;
-  this.selectedType = CHART_TYPE.TEMPERATURE;
-
   //the path generator for the line chart
   this.line = d3.svg.line()
     .x(function (d) {
-      return self.x(self.timeFormat.parse(d.date));
+      return self.x(d.dateTime);
     })
     .y(function (d) {
-      return self.y(d.y);
+      return self.y[self.selectedY](d[self.selectedY]);
     });
 
   this.navLine = d3.svg.line()
     .x(function (d) {
-      return self.navX(self.timeFormat.parse(d.date));
+      return self.navX(d.dateTime);
     })
     .y(function (d) {
-      return self.navY(d.y);
+      return self.navY[self.selectedY](d[self.selectedY]);
     });
 
   this.difference = d3.svg.area()
     .x(function (d) {
-      return self.x(self.timeFormat.parse(d.date));
+      return self.x(d.dateTime);
     })
-    .y1(function (d) {
-      return self.y(d.y);
+    .y(function (d) {
+      return self.y[self.selectedY](d[self.selectedY]);
     });
 
   //initialize svg with temperature readings
@@ -209,7 +195,7 @@ BuildingOverviewChart.prototype.initChart = function () {
     .attr("class", "value");
 
   this.tagPaths = this.area.selectAll(".tag")
-    .data(this.tagTemperatureReadings)
+    .data(this.tags)
     .enter().append("g")
     .attr("class", "tag")
     .append("path")
@@ -217,7 +203,7 @@ BuildingOverviewChart.prototype.initChart = function () {
     .style("pointer-events", "none");
 
   this.differenceContainer = this.area.selectAll(".difference-container")
-    .data([this.selectedTagData.DEW_POINT])
+    .data([this.selectedTagReadings])
     .enter().append("g")
     .attr("class", "difference-container");
 
@@ -256,7 +242,7 @@ BuildingOverviewChart.prototype.initChart = function () {
   this.navChart.append('g').classed('x axis', true);
 
   this.navTagPaths = this.navChart.selectAll(".tag")
-    .data(this.tagTemperatureReadings)
+    .data(this.tags)
     .enter().append("g")
     .attr("class", "tag")
     .append("path")
@@ -280,12 +266,12 @@ BuildingOverviewChart.prototype.render = function (event) {
 
   //update x and y scales to new dimensions
   this.x.range([0, this.width]);
-  this.y.range([this.height, 0]);
+  this.y[this.selectedY].range([this.height, 0]);
   this.navX.range([0, this.navWidth]);
-  this.navY.range([this.navHeight, 0]);
+  this.navY[this.selectedY].range([this.navHeight, 0]);
 
   //update the touch scale
-  this.touchScale.range([0, this._getSelectedTagData().length - 1]).clamp(true);
+  this.touchScale.range([0, this.selectedTagReadings.length - 1]).clamp(true);
 
   //update svg elements to new dimensions
   this.svg.attr('width', this.width + this.margin.left + this.margin.right)
@@ -337,7 +323,7 @@ BuildingOverviewChart.prototype.render = function (event) {
 
   //update the axis and line
   this.xAxis.scale(this.x);
-  this.yAxis.scale(this.y).orient(newWidth < this.breakPoint ? 'right' : 'left').innerTickSize(-this.width).outerTickSize(0);
+  this.yAxis.scale(this.y[this.selectedY]).orient(newWidth < this.breakPoint ? 'right' : 'left').innerTickSize(-this.width).outerTickSize(0);
   this.navXAxis.scale(this.navX);
 
   xAxisElement.attr('transform', 'translate(0,' + this.height + ')')
@@ -353,14 +339,14 @@ BuildingOverviewChart.prototype.render = function (event) {
       transitionElement.select("#clip-below path").duration(1000).attr("d", this.difference.y0(this.height));
       transitionElement.select("#clip-above path").duration(1000).attr("d", this.difference.y0(0));
       transitionElement.select(".difference.above").duration(1000).style('opacity', 0.6).attr("d", this.difference.y0(function (d) {
-        return self.y(d.dewPoint);
+        return self.y[self.selectedY](d.dewPoint);
       }));
       transitionElement.select(".difference.below").duration(1000).style('opacity', 0.6).attr("d", this.difference);
     } else {
       this.clipBelow.attr("d", this.difference.y0(this.height));
       this.clipAbove.attr("d", this.difference.y0(0));
       this.differenceAbove.attr("d", this.difference.y0(function (d) {
-        return self.y(d.dewPoint);
+        return self.y[self.selectedY](d.dewPoint);
       }));
       this.differenceBelow.attr("d", this.difference);
     }
@@ -371,57 +357,19 @@ BuildingOverviewChart.prototype.render = function (event) {
   }
 
   localTagPaths.attr("d", function (d) {
-    return self.line(d.values);
+    return self.line(d.readings);
   }).attr("class", function (d) {
     return d.id === self.selectedTagId ? "line active" : "line";
   });
   localNavTagPaths.attr("d", function (d) {
-    return self.navLine(d.values);
+    return self.navLine(d.readings);
   }).attr("class", function (d) {
     return d.id === self.selectedTagId ? "line active" : "line";
   });
 };
 
-BuildingOverviewChart.prototype.renderData = function (dataType) {
-  if (dataType === CHART_TYPE.TEMPERATURE) {
-    //update tagPaths
-    this.tagPaths.data(this.tagTemperatureReadings);
-    this.navTagPaths.data(this.tagTemperatureReadings);
-    //update yScale
-    this.y = this.yTemperature;
-    this.navY = this.navYTemperature;
-    this.selectedType = CHART_TYPE.TEMPERATURE;
-  } else if (dataType === CHART_TYPE.RELATIVE_HUMIDITY) {
-    //update tagPaths
-    this.tagPaths.data(this.tagRelativeHumidityReadings);
-    this.navTagPaths.data(this.tagRelativeHumidityReadings);
-    //update yScale
-    this.y = this.yRelativeHumidity;
-    this.navY = this.navYRelativeHumidity;
-    this.selectedType = CHART_TYPE.RELATIVE_HUMIDITY;
-  } else if (dataType === CHART_TYPE.DEW_POINT) {
-    //update tagPaths
-    this.tagPaths.data(this.tagDewPointReadings);
-    this.navTagPaths.data(this.tagDewPointReadings);
-    //update difference
-    this.differenceContainer.data(this.selectedTagData.DEW_POINT);
-    //update yScale
-    this.y = this.yDewPoint;
-    this.navY = this.navYDewPoint;
-    this.selectedType = CHART_TYPE.DEW_POINT;
-  } else if (dataType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
-    //update tagPaths
-    this.tagPaths.data(this.tagEquilibriumMoistureContentReadings);
-    this.navTagPaths.data(this.tagEquilibriumMoistureContentReadings);
-    //update yScale
-    this.y = this.yEquilibriumMoistureContent;
-    this.navY = this.navYEquilibriumMoistureContent;
-    this.selectedType = CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT;
-  } else {
-    console.log(dataType + " not recognised.");
-    return;
-  }
-
+BuildingOverviewChart.prototype.renderData = function (chartType) {
+  this._updateSelectedChartType(chartType);
   this.render();
 };
 
@@ -440,35 +388,11 @@ BuildingOverviewChart.prototype._updateDimensions = function (newWidth) {
 
 BuildingOverviewChart.prototype._selectTag = function (tagId) {
   this.selectedTagId = tagId;
-  [
-    {TEMPERATURE: this.tagTemperatureReadings},
-    {RELATIVE_HUMIDITY: this.tagRelativeHumidityReadings},
-    {DEW_POINT: this.tagDewPointReadings},
-    {EQUILIBRIUM_MOISTURE_CONTENT: this.tagEquilibriumMoistureContentReadings}
-  ].forEach(function (entry) {
-    var dataType = Object.keys(entry)[0];
-    this._setSelectedTagData(tagId, dataType, entry[dataType]);
-  }, this);
-};
-
-BuildingOverviewChart.prototype._setSelectedTagData = function (tagId, dataType, tagData) {
-  tagData.forEach(function (tag) {
+  this.tags.forEach(function (tag) {
     if (tagId === tag.id) {
-      this.selectedTagData[dataType] = tag.values;
+      this.selectedTagReadings = tag.readings;
     }
   }, this);
-};
-
-BuildingOverviewChart.prototype._getSelectedTagData = function () {
-  if (this.selectedType === CHART_TYPE.TEMPERATURE) {
-    return this.selectedTagData.TEMPERATURE;
-  } else if (this.selectedType === CHART_TYPE.RELATIVE_HUMIDITY) {
-    return this.selectedTagData.RELATIVE_HUMIDITY;
-  } else if (this.selectedType === CHART_TYPE.DEW_POINT) {
-    return this.selectedTagData.DEW_POINT;
-  } else if (this.selectedType === CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT) {
-    return this.selectedTagData.EQUILIBRIUM_MOISTURE_CONTENT;
-  }
 };
 
 BuildingOverviewChart.prototype._focus = function () {
@@ -498,24 +422,23 @@ BuildingOverviewChart.prototype._moveLocator = function () {
 
   //update locator coords
   this.locator.attr({
-    cx: this.x(this.timeFormat.parse(reading.date)),
-    cy: this.y(reading.y)
+    cx: this.x(reading.dateTime),
+    cy: this.y[this.selectedY](reading[this.selectedY])
   });
 
   //update tooltip content
-  var date = this.timeFormat.parse(reading.date);
-  this.tooltipKey.html(this.niceTimeFormat(date));
+  this.tooltipKey.html(reading.niceDateTime);
   if (this.selectedType == CHART_TYPE.DEW_POINT) {
-    this.tooltipValue.html((Math.round ((reading.y - reading.dewPoint) * 10) / 10)  + this.selectedType.suffix + " difference");
+    this.tooltipValue.html((Math.round ((reading[this.selectedY] - reading.dewPoint) * 10) / 10)  + this.selectedType.suffix + " difference");
   } else {
-    this.tooltipValue.html(reading.y + this.selectedType.suffix);
+    this.tooltipValue.html(reading[this.selectedY] + this.selectedType.suffix);
   }
 
   //get dimensions of tooltip element
   var dim = this.tooltip.node().getBoundingClientRect();
 
   //update the position of the tooltip
-  var tooltipTop = this.y(reading.y), //TODO follow mouse? coords[1] + dim.height - 5,
+  var tooltipTop = this.y[this.selectedY](reading[this.selectedY]), //TODO follow mouse? coords[1] + dim.height - 5,
   tooltipLeft = coords[0] + (dim.width / 2);
 
   //if right edge of tooltip goes beyond chart container, force it to move to the left of the mouse cursor
@@ -535,8 +458,8 @@ BuildingOverviewChart.prototype._getClosestReading = function (date, index) {
   var gettingCloser = true;
 
   while (gettingCloser) {
-    var currentReading = this._getSelectedTagData()[index];
-    var currentDifference = date - this.timeFormat.parse(currentReading.date);
+    var currentReading = this.selectedTagReadings[index];
+    var currentDifference = date - currentReading.dateTime;
 
     if (currentDifference < 0 && currentDifference > bestDifference) {
       index -= 1;

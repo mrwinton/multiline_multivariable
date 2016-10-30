@@ -8,11 +8,11 @@ var chart = new BuildingOverviewChart('#chart');
 
 chart.initData(tags, firstTag.id);
 //initialize chart
-chart.initChart();
+chart.initChart(CHART_TYPE.EQUILIBRIUM_MOISTURE_CONTENT);
 //render the chart
 chart.render("init");
 
-window.addEventListener('resize', function() { chart.render("change") });
+window.addEventListener('resize', function() { chart.render("change"); });
 
 $( "#temperature" ).click(function() {
     chart.renderData(CHART_TYPE.TEMPERATURE);
